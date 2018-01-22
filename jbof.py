@@ -110,12 +110,11 @@ class Entry:
         Currently, only `fileformat`= ['npy', 'wav', 'flac', 'ogg'] are implemented.
         """
         with open(self.directory / (name + '.json'), 'w') as f:
+            datafilename = self.directory / (name + '.' + fileformat)
             if fileformat == 'npy':
-               datafilename = self.directory / (name + '.npy')
                numpy.save(datafilename, data)
             elif fileformat in ['wav', 'flac', 'ogg']:
                 if samplerate:
-                    datafilename = self.directory / (name + '.' + fileformat)
                     soundfile.write(str(datafilename), data, int(samplerate))
                 else:
                     raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
