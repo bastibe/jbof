@@ -20,8 +20,18 @@ import json
 from pathlib import Path
 
 class DataSet:
+    """A structured collection of entries that contain data."""
+
     @staticmethod
     def create_dataset(directory, metadata=None, entryformat=None):
+        """Create a new dataset.
+
+        `metadata` must be JSON-serializable
+        `entryformat` is a `str.format` string, to be called with an
+            entry's metadata to create the entry's directory name.
+            This is useful for creating human-readable directories.
+
+        """
         directory = Path(directory)
         directory.mkdir()
         with open(directory / '_metadata.json', 'wt') as f:
@@ -35,33 +45,36 @@ class DataSet:
         self.directory = Path(directory)
 
     @property
+    def entryformat(self):
+        return self.metadata['_entryformat']
+
+    @property
     def metadata(self):
         with open(self.directory / '_metadata.json') as f:
             return json.load(f)
 
-    @property
-    def _entryformat(self):
-        return self.metadata['_entryformat']
-
     def __getitem__(self, key):
         return self.metadata[key]
 
-    def entryname(self, metadata):
-        if isinstance(self._entryformat, str) and '{' in self._entryformat:
-            return self._entryformat.format(**metadata)
-        elif self._entryformat is None:
+    def _entryname(self, metadata):
+        entryformat = self.entryformat
+        if isinstance(entryformat, str) and '{' in entryformat:
+            return entryformat.format(**metadata)
+        elif entryformat is None:
             return str(uuid.uuid1())
         else:
-            return TypeError(f'entryname must be None, or format string, not {self._entryformat}')
+            return TypeError(f'entryname must be None, or format string, not {entryformat}')
 
-    def entries(self):
+    def all_entries(self):
+        """A generator that returns all entries."""
         for dir in self.directory.glob('*'):
             if not dir.is_dir() or dir.stem == '__pycache__':
                 continue
             yield Entry(dir)
 
     def create_entry(self, metadata):
-        dirname = self.entryname(metadata)
+        """Create a new, empty entry with metadata."""
+        dirname = self._entryname(metadata)
         (self.directory / dirname).mkdir()
         with open(self.directory / dirname / '_metadata.json', 'w') as f:
             json.dump(metadata, f)
@@ -83,7 +96,17 @@ class Entry:
     def __getattr__(self, name):
         return Datum(self.directory / name + '.json')
 
-    def create_datum(self, name, data, metadata, fileformat='npy'):
+    def create_datum(self, name, data, metadata, fileformat='npy', samplerate=None):
+        """Create a new datum.
+
+        `name` is the name of the datum.
+        `data` must be numpy-serializable.
+        `metadata` must be JSON-serializable.
+        `fileformat` must be one of ['npy', 'msgpack', 'csv', 'wav', 'flac', 'ogg', 'mat']
+            if fileformat is 'wav', 'flac', or 'ogg', `samplerate` must be given.
+
+        Currently, only `fileformat`='npy' is implemented.
+        """
         if not fileformat == 'npy':
             raise NotImplementedError('Only npy is supported')
 
@@ -93,12 +116,11 @@ class Entry:
         numpy.save(datafilename, data)
 
     def all_data(self):
-        out = {}
+        """A generator that returns all data as name-value pairs."""
         for meta in self.directory.glob('*.json'):
             if meta.stem == '_metadata':
                 continue
-            out[meta.stem] = Datum(meta)
-        return out
+            yield meta.stem, Datum(meta)
 
 
 class Datum(numpy.ndarray):

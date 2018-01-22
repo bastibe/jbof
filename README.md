@@ -54,7 +54,7 @@ Access the dataset's metadata:
 
 Access the dataset's entries:
 ```python
->>> for entry in dataset.entries():
+>>> for entry in dataset.all_entries():
 >>>     print(entry.metadata)
 {'again': 'arbitrary JSON data'}
 ```
@@ -62,7 +62,7 @@ Access the dataset's entries:
 Access each entry's data:
 ```python
 # either:
->>> for name, datum in entry.all_data().items():
+>>> for name, datum in entry.all_data():
 >>>    print(name, datum.metadata, datum)
 datum1 {'again': 'more JSON data'} [numpy.ndarray]
 # or:
@@ -91,7 +91,7 @@ Entries do not have name, and entry directories are random UUIDs. If you want to
 
 ## TODO
 
-- [ ] Add search queries to `DataSet.entries`
+- [ ] Add search queries to `DataSet.all_entries`
 - [ ] Write a test suite
 - [ ] Implement already-exist checks in `DataSet.create_entry`/`Entry.create_datum`
 - [ ] Implement different file types for `Entry.create_datum`/`Data.__new__` (npy, msgpack, csv, wav, flag, ogg, mat)

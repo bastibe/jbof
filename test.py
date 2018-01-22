@@ -11,13 +11,13 @@ e.create_datum('test2', numpy.random.randn(10), {'foo': 'foo2'})
 e = d.create_entry({'foo': 'baz2'})
 e.create_datum('test', numpy.random.randn(10), {'foo': 'foo'})
 
-for entry in d.entries():
+for entry in d.all_entries():
     print(entry.metadata)
-    for name, data in entry.all_data().items():
+    for name, data in entry.all_data():
         print(name, data.metadata, data)
 
 from tmp import dataset
-for entry in dataset.entries():
+for entry in dataset.all_entries():
     print(entry.metadata)
-    for name, data in entry.all_data().items():
+    for name, data in entry.all_data():
         print(name, data.metadata, data)
