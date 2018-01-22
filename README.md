@@ -62,27 +62,27 @@ Access each entry's data:
 # either:
 >>> for name, datum in entry.all_data().items():
 >>>    print(name, datum.metadata, datum)
-datum1 {'again': 'more JSON data'} numpy.ndarray
+datum1 {'again': 'more JSON data'} [numpy.ndarray]
 # or:
-entry.datum1.metadata
+>>> entry.datum1.metadata
 {'again': 'more JSON data'}
-entry.datum1
-numpy.ndarray
+>>> entry.datum1
+[numpy.ndarray]
 ```
 
 ## Writing Data
 
 Create a new dataset:
-```
-import jbod
-dataset = jbod.DataSet.create_dataset('new_dataset', metadata={...})
+```python
+>>> import jbod
+>>> dataset = jbod.DataSet.create_dataset('new_dataset', metadata={...})
 ```
 
 Then, create entries and data:
-```
-entry = dataset.create_entry(metadata={...})
-entry.create_datum('datum1', [your data], metadata={...})
-entry.create_datum('datum2', [your data], metadata={...})
+```python
+>>> entry = dataset.create_entry(metadata={...})
+>>> entry.create_datum('datum1', [your data], metadata={...})
+>>> entry.create_datum('datum2', [your data], metadata={...})
 ```
 
 Entries do not have name, and entry directories are random UUIDs. If you want to have human-readable names, supply an `entryformat` to the `DataSet` (a `str.format` string that will be called with the metadata).
