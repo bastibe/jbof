@@ -20,6 +20,7 @@ import json
 from pathlib import Path
 import soundfile
 from os.path import splitext
+import scipy.io
 
 class DataSet:
     """A structured collection of entries that contain data."""
@@ -118,6 +119,8 @@ class Entry:
                     soundfile.write(str(datafilename), data, int(samplerate))
                 else:
                     raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
+            elif fileformat == 'mat':
+                scipy.io.savemat(str(datafilename), dict([(name, data)]))
             else:
                 raise NotImplementedError(f'Fileformat {fileformat} not supported.')
             json.dump(dict(metadata, _filename=str(datafilename)), f, indent=2)
@@ -139,6 +142,8 @@ class Datum(numpy.ndarray):
             data = numpy.load(metadata['_filename'])
         elif extension in ['.wav', '.flac', '.ogg']:
             data, _ = soundfile.read(metadata['_filename'])
+        elif extension == '.mat':
+            data = scipy.io.loadmat(metadata['_filename'])
         obj = numpy.asarray(data).view(cls)
         obj.metadata = metadata
         return obj
