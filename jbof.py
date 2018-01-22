@@ -12,6 +12,9 @@ class DataSet:
                 self.directory.mkdir()
             with open(self.directory / '_metadata.json', 'wt') as f:
                 json.dump(dict(metadata, _entryformat=entryformat), f, indent=2)
+            with open(self.directory / '__init__.py', 'wt') as f:
+                f.write('import jbof\n')
+                f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
 
     @property
     def metadata(self):
@@ -34,7 +37,9 @@ class DataSet:
             return TypeError(f'entryname must be None, or format string, not {self._entryformat}')
 
     def entries(self):
-        for dir in (d for d in self.directory.glob('*') if d.is_dir()):
+        for dir in self.directory.glob('*'):
+            if not dir.is_dir() or dir.stem == '__pycache__':
+                continue
             yield Entry(dir)
 
     def create_entry(self, metadata):

@@ -15,3 +15,9 @@ for entry in d.entries():
     print(entry.metadata)
     for name, data in entry.all_data().items():
         print(name, data.metadata, data)
+
+from tmp import dataset
+for entry in dataset.entries():
+    print(entry.metadata)
+    for name, data in entry.all_data().items():
+        print(name, data.metadata, data)
