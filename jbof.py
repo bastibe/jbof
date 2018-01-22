@@ -19,7 +19,7 @@ import uuid
 import json
 from pathlib import Path
 import soundfile
-from os.path import splitext
+from os.path import splitext, basename
 import scipy.io
 
 class DataSet:
@@ -143,7 +143,9 @@ class Datum(numpy.ndarray):
         elif extension in ['.wav', '.flac', '.ogg']:
             data, _ = soundfile.read(metadata['_filename'])
         elif extension == '.mat':
+            name = basename(splitext(metadata['_filename'])[0])
             data = scipy.io.loadmat(metadata['_filename'])
+            data = data[name]
         obj = numpy.asarray(data).view(cls)
         obj.metadata = metadata
         return obj
