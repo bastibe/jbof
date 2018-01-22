@@ -2,6 +2,8 @@
 
 Many datasets consist of large collections of disjointed files, often with various levels of metadata. Managing such a dataset is finicky and error-prone. JBOF standardizes the creation and access to such a dataset.
 
+JBOF is free software under the terms of the GPL v3 license.
+
 ## Structure
 
 In JBOF, a dataset consists of many *entries*, each of which may contain many *data*. The dataset, each entry, and each datum can have arbitrary metadata.
