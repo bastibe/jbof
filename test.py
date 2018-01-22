@@ -2,14 +2,14 @@ import jbof
 import shutil
 import numpy
 
-shutil.rmtree('tmp')
+shutil.rmtree('tmp', ignore_errors=True)
 
-d = jbof.DataSet('tmp', {'foo': 'bar'})
+d = jbof.DataSet.create_dataset('tmp', {'foo': 'bar'})
 e = d.create_entry({'foo': 'baz1'})
-e.create_data('test1', numpy.random.randn(10), {'foo': 'foo1'})
-e.create_data('test2', numpy.random.randn(10), {'foo': 'foo2'})
+e.create_datum('test1', numpy.random.randn(10), {'foo': 'foo1'})
+e.create_datum('test2', numpy.random.randn(10), {'foo': 'foo2'})
 e = d.create_entry({'foo': 'baz2'})
-e.create_data('test', numpy.random.randn(10), {'foo': 'foo'})
+e.create_datum('test', numpy.random.randn(10), {'foo': 'foo'})
 
 for entry in d.entries():
     print(entry.metadata)

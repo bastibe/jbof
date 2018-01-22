@@ -4,17 +4,19 @@ import json
 from pathlib import Path
 
 class DataSet:
-    def __init__(self, directory, metadata=None, entryformat=None):
-        self.directory = Path(directory)
+    @staticmethod
+    def create_dataset(directory, metadata=None, entryformat=None):
+        directory = Path(directory)
+        directory.mkdir()
+        with open(directory / '_metadata.json', 'wt') as f:
+            json.dump(dict(metadata, _entryformat=entryformat), f, indent=2)
+        with open(directory / '__init__.py', 'wt') as f:
+            f.write('import jbof\n')
+            f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
+        return DataSet(directory)
 
-        if not (self.directory / '_metadata.json').exists():
-            if not self.directory.exists():
-                self.directory.mkdir()
-            with open(self.directory / '_metadata.json', 'wt') as f:
-                json.dump(dict(metadata, _entryformat=entryformat), f, indent=2)
-            with open(self.directory / '__init__.py', 'wt') as f:
-                f.write('import jbof\n')
-                f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
+    def __init__(self, directory):
+        self.directory = Path(directory)
 
     @property
     def metadata(self):
@@ -30,7 +32,7 @@ class DataSet:
 
     def entryname(self, metadata):
         if isinstance(self._entryformat, str) and '{' in self._entryformat:
-            return self._entryformat.format(metadata)
+            return self._entryformat.format(**metadata)
         elif self._entryformat is None:
             return str(uuid.uuid1())
         else:
@@ -63,9 +65,9 @@ class Entry:
         return self.metadata[key]
 
     def __getattr__(self, name):
-        return Data(self.directory / name + '.json')
+        return Datum(self.directory / name + '.json')
 
-    def create_data(self, name, data, metadata, fileformat='npy'):
+    def create_datum(self, name, data, metadata, fileformat='npy'):
         if not fileformat == 'npy':
             raise NotImplementedError('Only npy is supported')
 
@@ -79,11 +81,11 @@ class Entry:
         for meta in self.directory.glob('*.json'):
             if meta.stem == '_metadata':
                 continue
-            out[meta.stem] = Data(meta)
+            out[meta.stem] = Datum(meta)
         return out
 
 
-class Data(numpy.ndarray):
+class Datum(numpy.ndarray):
     def __new__(cls, metafile):
         with metafile.open() as f:
             metadata = json.load(f)
