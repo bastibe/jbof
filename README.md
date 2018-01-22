@@ -93,8 +93,8 @@ Entries do not have name, and entry directories are random UUIDs. If you want to
 
 - [ ] Add search queries to `DataSet.all_entries`
 - [ ] Write a test suite
-- [ ] Implement already-exist checks in `DataSet.create_entry`/`Entry.create_datum`
-- [ ] Implement different file types for `Entry.create_datum`/`Data.__new__` (npy, msgpack, csv, wav, flag, ogg, mat)
+- [ ] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.create_entry`/`Entry.create_datum`
+- [ ] Implement different file types for `Entry.create_datum`/`Data.__new__` (npy, msgpack, csv, wav, flac, ogg, mat)
 - [ ] Implement read-only flag for dataset
 - [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
 - [ ] Implement deleting entries/data (but don't change existing entries/data to avoid race conditions)
