@@ -108,7 +108,7 @@ class Entry:
         `fileformat` must be one of ['npy', 'msgpack', 'csv', 'wav', 'flac', 'ogg', 'mat']
             if fileformat is 'wav', 'flac', or 'ogg', `samplerate` must be given.
 
-        Currently, only `fileformat`= ['npy', 'wav', 'flac', 'ogg'] are implemented.
+        Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
         with open(self.directory / (name + '.json'), 'w') as f:
             datafilename = self.directory / (name + '.' + fileformat)
