@@ -6,7 +6,8 @@ JBOF is free software under the terms of the GPL v3 license.
 
 ## Structure
 
-In JBOF, a dataset consists of many *entries*, each of which may contain many *data*. The dataset, each entry, and each datum can have arbitrary metadata.
+In JBOF, a dataset consists of many *items*, each of which may contain many *arrays*. The dataset, each item, and each array can have arbitrary metadata (as long as it is serializable as JSON). Arrays are Numpy arrays, stored as `.npy`-files, or as various other file formats (`.mat`, `.wav`, `.ogg`, `.flac`, `.msgpack`, `.csv`).
+
 
 On disk, a dataset in JBOF is organized as follows:
 ```
@@ -25,9 +26,11 @@ dataset
     └── datum2.npy
 ```
 
-- The *dataset* directory contains its own metadata as *_metadata.json*, and sub-directories for each *entry*.
-- Each *entry* directory contains its own metadata as *_metadata.json*, and pairs of files for each *datum*.
-- Each *datum* is a pair of files, one for metadata *datum.json*, and one containing the actual data *datum.npy*.
+This structure is meant to be both simple and human-readable.
+
+- The *dataset* directory contains its own metadata as *_metadata.json*, and sub-directories for each *item*.
+- Each *item* directory contains its own metadata as *_metadata.json*, and pairs of files for each *array*.
+- Each *array* is a pair of files, one for metadata *array.json*, and one containing the actual data *array.npy*.
 
 By making sure that each operation on the dataset and entries is atomic, multiple processes can read/write the dataset concurrently without fear of data corruption or race conditions.
 
@@ -102,6 +105,7 @@ Entries do not have name, and entry directories are random UUIDs. If you want to
   - [X] `flac`
   - [X] `ogg`
   - [X] `mat`
+- [ ] Implement importing existing files in `Item.create_array`
 - [ ] Implement read-only flag for dataset
 - [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
 - [ ] Implement deleting entries/data (but don't change existing entries/data to avoid race conditions)
