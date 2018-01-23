@@ -21,7 +21,7 @@ def test_dataset(example_data):
     with pytest.raises(TypeError):
         d = jbof.DataSet('doesnotexist')
     d = jbof.DataSet('tmp')
-    assert d.metadata == {'kind': 'dataset', '_itemformat': None}
+    assert d.metadata == {'kind': 'dataset'}
 
 def test_import_dataset(example_data):
     from tmp import dataset as data
@@ -38,12 +38,12 @@ def test_arrays(example_data):
     for item in example_data.all_items():
         for name, array in item.all_arrays():
             assert numpy.all(array == {'zeros': 0, 'ones': 1, 'twos': 2}[name])
-            if Path(array.metadata['_filename']).suffix in ['.wav', '.flac', '.ogg']:
+            if Path(array._filename).suffix in ['.wav', '.flac', '.ogg']:
                 assert(array.metadata['samplerate'])
             else:
-                assert len(array.metadata) == 2
+                assert len(array.metadata) == 1
             assert array.metadata['kind'] == name
-            assert '_filename' in array.metadata
+            assert hasattr(array, '_filename')
             visited_arrays.append(name)
     assert sorted(visited_arrays) == ['ones', 'twos', 'zeros']
 

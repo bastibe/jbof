@@ -61,12 +61,15 @@ class DataSet:
 
     @property
     def itemformat(self):
-        return self.metadata['_itemformat']
+        with (self._directory / '_metadata.json').open() as f:
+            return json.load(f)['_itemformat']
 
     @property
     def metadata(self):
         with (self._directory / '_metadata.json').open() as f:
-            return json.load(f)
+            metadata = json.load(f)
+            del metadata['_itemformat']
+            return metadata
 
     def __getitem__(self, key):
         return self.metadata[key]
@@ -218,13 +221,14 @@ class Item:
         """Deletes array permanently from the hard drive."""
         if not isinstance(array, Array):
             raise TypeError('array must be of type Array')
-        arrayfilename = Path(array.metadata['_filename'])
+        arrayfilename = Path(array._filename)
         metafilename = arrayfilename.with_suffix('.json')
         arrayfilename.unlink()
         metafilename.unlink()
 
 
 class Array(numpy.ndarray):
+    """A subclass of numpy.ndarray with a `_filename` and `metadata`."""
     def __new__(cls, metafile):
         with metafile.open() as f:
             metadata = json.load(f)
@@ -238,9 +242,12 @@ class Array(numpy.ndarray):
             data = scipy.io.loadmat(metadata['_filename'])
             data = data[name]
         obj = numpy.asarray(data).view(cls)
+        obj._filename = metadata['_filename']
+        del metadata['_filename']
         obj.metadata = metadata
         return obj
 
     def __array_finalize__(self, obj):
         if obj is None: return
         self.metadata = getattr(obj, 'metadata', None)
+        self._filename = getattr(obj, '_filename', None)
