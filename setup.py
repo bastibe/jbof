@@ -9,6 +9,6 @@ setup(
     url='https://github.com/bastibe/jbof',
     license='GPL v3',
     py_modules=['runforrest'],
-    install_requires=['numpy'],
+    install_requires=['numpy', 'json', 'soundfile', 'scipy'],
     python_requires='>=3.6'
 )
