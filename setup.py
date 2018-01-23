@@ -8,7 +8,7 @@ setup(
     author_email='basti@bastibe.de',
     url='https://github.com/bastibe/jbof',
     license='GPL v3',
-    py_modules=['runforrest'],
+    py_modules=['jbof'],
     install_requires=['numpy', 'soundfile', 'scipy'],
     python_requires='>=3.6'
 )
