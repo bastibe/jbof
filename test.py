@@ -3,13 +3,16 @@ import pytest
 import jbof
 import shutil
 import numpy
+from pathlib import Path
 
 @pytest.fixture
 def example_data():
     d = jbof.DataSet.create_dataset('tmp', {'kind': 'dataset'})
     e = d.create_entry({'kind': 'entry'})
-    e.create_datum('ones', numpy.ones(10), {'kind': 'ones'})
-    e.create_datum('zeros', numpy.zeros(10), {'kind': 'zeros'})
+    e.create_datum('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='wav', samplerate=8000)
+    e.create_datum('zeros', numpy.zeros(10), {'kind': 'zeros'}, fileformat='flac', samplerate=16000)
+    e.create_datum('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='ogg', samplerate=44100)
+    e.create_datum('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='mat')
     e = d.create_entry({'kind': 'entry'})
     e.create_datum('twos', numpy.ones(10)*2, {'kind': 'twos'})
     yield d
@@ -37,7 +40,10 @@ def test_data(example_data):
     for entry in example_data.all_entries():
         for name, data in entry.all_data():
             assert numpy.all(data == {'zeros': 0, 'ones': 1, 'twos': 2}[name])
-            assert len(data.metadata) == 2
+            if Path(data.metadata['_filename']).suffix in ['.wav', '.flac', '.ogg']:
+                assert(data.metadata['samplerate'])
+            else:
+                assert len(data.metadata) == 2
             assert data.metadata['kind'] == name
             assert '_filename' in data.metadata
             visited_data.append(name)
