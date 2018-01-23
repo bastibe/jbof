@@ -48,8 +48,17 @@ def test_arrays(example_data):
             visited_arrays.append(name)
     assert sorted(visited_arrays) == ['ones', 'twos', 'zeros']
 
-def test_add_existing_array_raises_error(example_data):
-    for item in example_data.all_items():
-        if 'zeros' in [n for n, _ in item.all_arrays()]:
-            with pytest.raises(TypeError):
-                item.add_array('zeros', [])
+def test_add_existing_array_raises_error():
+    d = jbof.DataSet.create_dataset('tmp2', {})
+    e = d.add_item({})
+    e.add_array('tmp', [], {})
+    with pytest.raises(TypeError):
+        e.add_array('tmp', [], {})
+    shutil.rmtree('tmp2')
+
+def test_add_existing_item_raises_error():
+    d = jbof.DataSet.create_dataset('tmp2', {}, itemformat='{kind}')
+    e = d.add_item({'kind': 'item1'})
+    with pytest.raises(TypeError):
+        d.add_item({'kind': 'item1'})
+    shutil.rmtree('tmp2')
