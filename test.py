@@ -19,7 +19,8 @@ def test_dataset(example_data):
     with pytest.raises(TypeError):
         d = jbof.DataSet('doesnotexist')
     d = jbof.DataSet('tmp')
-    assert d.metadata == {'kind': 'dataset'}
+    assert d.metadata == {'kind': 'dataset', '_entryformat': None}
+
 
 def test_import_dataset(example_data):
     from tmp import dataset as data
