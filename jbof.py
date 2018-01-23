@@ -115,6 +115,7 @@ class Entry:
         elif fileformat in ['wav', 'flac', 'ogg']:
             if samplerate:
                 soundfile.write(str(datafilename), data, int(samplerate))
+                metadata['samplerate'] = int(samplerate)
             else:
                 raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
         elif fileformat == 'mat':
