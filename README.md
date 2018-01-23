@@ -92,7 +92,7 @@ Entries do not have name, and entry directories are random UUIDs. If you want to
 ## TODO
 
 - [ ] Add search queries to `DataSet.all_entries`
-- [ ] Write a test suite
+- [X] Write a test suite
 - [ ] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.create_entry`/`Entry.create_datum`
 - [ ] Implement different file types for `Entry.create_datum`/`Data.__new__` (npy, msgpack, csv, wav, flac, ogg, mat)
 - [ ] Implement read-only flag for dataset
