@@ -22,29 +22,36 @@ import shutil
 import soundfile
 import scipy.io
 
+def delete_dataset(dataset):
+    """Deletes the whole dataset permanently from the hard drive."""
+    if not isinstance(dataset, DataSet):
+        raise TypeError('dataset must be of type DataSet')
+    shutil.rmtree(dataset._directory)
+    dataset._directory = None
+
+def create_dataset(directory, metadata=None, itemformat=None):
+    """Create a new dataset.
+
+    `metadata` must be JSON-serializable
+    `itemformat` is a `str.format` string, to be called with an
+        item's metadata to create the item's directory name.
+        This is useful for creating human-readable directories.
+
+    """
+    directory = Path(directory)
+    if directory.exists():
+        raise TypeError('A directory with name {str(directory)} already exists')
+    directory.mkdir()
+    with (directory / '_metadata.json').open('wt') as f:
+        json.dump(dict(metadata, _itemformat=itemformat), f, indent=2)
+    with (directory / '__init__.py').open('wt') as f:
+        f.write('import jbof\n')
+        f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
+    return DataSet(directory)
+
+
 class DataSet:
     """A structured collection of items that contain data."""
-
-    @staticmethod
-    def create_dataset(directory, metadata=None, itemformat=None):
-        """Create a new dataset.
-
-        `metadata` must be JSON-serializable
-        `itemformat` is a `str.format` string, to be called with an
-            item's metadata to create the item's directory name.
-            This is useful for creating human-readable directories.
-
-        """
-        directory = Path(directory)
-        if directory.exists():
-            raise TypeError('A directory with name {str(directory)} already exists')
-        directory.mkdir()
-        with (directory / '_metadata.json').open('wt') as f:
-            json.dump(dict(metadata, _itemformat=itemformat), f, indent=2)
-        with (directory / '__init__.py').open('wt') as f:
-            f.write('import jbof\n')
-            f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
-        return DataSet(directory)
 
     def __init__(self, directory):
         directory = Path(directory)
@@ -90,6 +97,13 @@ class DataSet:
             json.dump(metadata, f)
         return Item(self._directory / dirname)
 
+    def delete_item(self, item):
+        """Deletes item permanently from the hard drive."""
+        if not isinstance(item, Item):
+            raise TypeError('item must be of type Item')
+        shutil.rmtree(item._directory)
+        item._directory = None
+
 
 class Item:
     def __init__(self, directory):
@@ -105,6 +119,13 @@ class Item:
 
     def __getattr__(self, name):
         return Array(self._directory / (name + '.json'))
+
+    def all_arrays(self):
+        """A generator that returns all arrays as name-value pairs."""
+        for meta in self._directory.glob('*.json'):
+            if meta.stem == '_metadata':
+                continue
+            yield meta.stem, Array(meta)
 
     def add_array_from_file(self, name, filename, metadata):
         """Add a new array from an existing file.
@@ -128,8 +149,11 @@ class Item:
 
         shutil.copy(filename, arrayfilename)
 
-        with (self._directory / (name + '.json')).open('wt') as f:
+        metafilename = self._directory / (name + '.json')
+        with metafilename.open('wt') as f:
             json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
+
+        return Array(metafilename)
 
     def add_array(self, name, data, metadata, fileformat='npy', samplerate=None):
         """Add a new array.
@@ -158,15 +182,20 @@ class Item:
         else:
             raise NotImplementedError(f'Fileformat {fileformat} not supported.')
 
-        with (self._directory / (name + '.json')).open('wt') as f:
+        metafilename = (self._directory / (name + '.json'))
+        with metafilename.open('wt') as f:
             json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
 
-    def all_arrays(self):
-        """A generator that returns all arrays as name-value pairs."""
-        for meta in self._directory.glob('*.json'):
-            if meta.stem == '_metadata':
-                continue
-            yield meta.stem, Array(meta)
+        return Array(metafilename)
+
+    def delete_array(self, array):
+        """Deletes array permanently from the hard drive."""
+        if not isinstance(array, Array):
+            raise TypeError('array must be of type Array')
+        arrayfilename = Path(array.metadata['_filename'])
+        metafilename = arrayfilename.with_suffix('.json')
+        arrayfilename.unlink()
+        metafilename.unlink()
 
 
 class Array(numpy.ndarray):

@@ -1,13 +1,12 @@
 import pytest
 
 import jbof
-import shutil
 import numpy
 from pathlib import Path
 
 @pytest.fixture
 def example_data():
-    d = jbof.DataSet.create_dataset('tmp', {'kind': 'dataset'})
+    d = jbof.create_dataset('tmp', {'kind': 'dataset'})
     e = d.add_item({'kind': 'item'})
     e.add_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='wav', samplerate=8000)
     e.add_array('zeros', numpy.zeros(10), {'kind': 'zeros'}, fileformat='flac', samplerate=16000)
@@ -16,7 +15,7 @@ def example_data():
     e = d.add_item({'kind': 'item'})
     e.add_array('twos', numpy.ones(10)*2, {'kind': 'twos'})
     yield d
-    shutil.rmtree('tmp')
+    jbof.delete_dataset(d)
 
 def test_dataset(example_data):
     with pytest.raises(TypeError):
@@ -49,32 +48,55 @@ def test_arrays(example_data):
     assert sorted(visited_arrays) == ['ones', 'twos', 'zeros']
 
 def test_create_existing_dataset_raises_error():
-    d = jbof.DataSet.create_dataset('tmp2', {})
+    d = jbof.create_dataset('tmp2', {})
     with pytest.raises(TypeError):
-        jbof.DataSet.create_dataset('tmp2', {})
-    shutil.rmtree('tmp2')
+        jbof.create_dataset('tmp2', {})
+    jbof.delete_dataset(d)
 
 def test_add_existing_item_raises_error():
-    d = jbof.DataSet.create_dataset('tmp2', {}, itemformat='{kind}')
+    d = jbof.create_dataset('tmp2', {}, itemformat='{kind}')
     e = d.add_item({'kind': 'item1'})
     with pytest.raises(TypeError):
         d.add_item({'kind': 'item1'})
-    shutil.rmtree('tmp2')
+    jbof.delete_dataset(d)
 
 def test_add_existing_array_raises_error():
-    d = jbof.DataSet.create_dataset('tmp2', {})
+    d = jbof.create_dataset('tmp2', {})
     e = d.add_item({})
     e.add_array('tmp', [], {})
     with pytest.raises(TypeError):
         e.add_array('tmp', [], {})
-    shutil.rmtree('tmp2')
+    jbof.delete_dataset(d)
 
 def test_add_array_from_file():
-    d = jbof.DataSet.create_dataset('tmp2', {})
+    d = jbof.create_dataset('tmp2', {})
     e = d.add_item({})
     numpy.save('tmp.npy', numpy.ones(5))
     e.add_array_from_file('array', 'tmp.npy', {})
     assert numpy.all(e.array == 1)
     assert len(e.array) == 5
-    shutil.rmtree('tmp2')
+    jbof.delete_dataset(d)
     Path('tmp.npy').unlink()
+
+def test_delete_dataset():
+    d = jbof.create_dataset('tmp3', {})
+    jbof.delete_dataset(d)
+    with pytest.raises(TypeError):
+        d = jbof.DataSet('tmp3')
+
+def test_delete_item():
+    d = jbof.create_dataset('tmp2', {})
+    e = d.add_item({})
+    assert len(list(d.all_items())) == 1
+    d.delete_item(e)
+    assert len(list(d.all_items())) == 0
+    jbof.delete_dataset(d)
+
+def test_delete_array():
+    d = jbof.create_dataset('tmp2', {})
+    e = d.add_item({})
+    a = e.add_array('tmp', [], {})
+    assert len(list(e.all_arrays())) == 1
+    e.delete_array(a)
+    assert len(list(e.all_arrays())) == 0
+    jbof.delete_dataset(d)
