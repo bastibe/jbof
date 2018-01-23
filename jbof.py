@@ -35,6 +35,8 @@ class DataSet:
 
         """
         directory = Path(directory)
+        if directory.exists():
+            raise TypeError('A directory with name {str(directory)} already exists')
         directory.mkdir()
         with (directory / '_metadata.json').open('wt') as f:
             json.dump(dict(metadata, _itemformat=itemformat), f, indent=2)
@@ -77,9 +79,11 @@ class DataSet:
                 continue
             yield Item(dir)
 
-    def create_item(self, metadata):
-        """Create a new, empty item with metadata."""
+    def add_item(self, metadata):
+        """Add a new, empty item with metadata."""
         dirname = self._itemname(metadata)
+        if (self._directory / dirname).exists():
+            raise TypeError(f'Item with name {str(dirname)} already exists')
         (self._directory / dirname).mkdir()
         with (self._directory / dirname / '_metadata.json').open('wt') as f:
             json.dump(metadata, f)
@@ -101,8 +105,8 @@ class Item:
     def __getattr__(self, name):
         return Array(self._directory / (name + '.json'))
 
-    def create_array(self, name, data, metadata, fileformat='npy', samplerate=None):
-        """Create a new array.
+    def add_array(self, name, data, metadata, fileformat='npy', samplerate=None):
+        """Add a new array.
 
         `name` is the name of the array.
         `data` must be numpy-serializable.
@@ -113,6 +117,8 @@ class Item:
         Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
         arrayfilename = self._directory / (name + '.' + fileformat)
+        if arrayfilename.exists():
+            raise TypeError(f'Array with name {arrayfilename.name} already exists')
         if fileformat == 'npy':
             numpy.save(arrayfilename, data)
         elif fileformat in ['wav', 'flac', 'ogg']:

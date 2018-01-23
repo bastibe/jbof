@@ -8,13 +8,13 @@ from pathlib import Path
 @pytest.fixture
 def example_data():
     d = jbof.DataSet.create_dataset('tmp', {'kind': 'dataset'})
-    e = d.create_item({'kind': 'item'})
-    e.create_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='wav', samplerate=8000)
-    e.create_array('zeros', numpy.zeros(10), {'kind': 'zeros'}, fileformat='flac', samplerate=16000)
-    e.create_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='ogg', samplerate=44100)
-    e.create_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='mat')
-    e = d.create_item({'kind': 'item'})
-    e.create_array('twos', numpy.ones(10)*2, {'kind': 'twos'})
+    e = d.add_item({'kind': 'item'})
+    e.add_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='wav', samplerate=8000)
+    e.add_array('zeros', numpy.zeros(10), {'kind': 'zeros'}, fileformat='flac', samplerate=16000)
+    e.add_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='ogg', samplerate=44100)
+    e.add_array('ones', numpy.ones(10), {'kind': 'ones'}, fileformat='mat')
+    e = d.add_item({'kind': 'item'})
+    e.add_array('twos', numpy.ones(10)*2, {'kind': 'twos'})
     yield d
     shutil.rmtree('tmp')
 
@@ -23,7 +23,6 @@ def test_dataset(example_data):
         d = jbof.DataSet('doesnotexist')
     d = jbof.DataSet('tmp')
     assert d.metadata == {'kind': 'dataset', '_itemformat': None}
-
 
 def test_import_dataset(example_data):
     from tmp import dataset as data
@@ -48,3 +47,9 @@ def test_arrays(example_data):
             assert '_filename' in array.metadata
             visited_arrays.append(name)
     assert sorted(visited_arrays) == ['ones', 'twos', 'zeros']
+
+def test_add_existing_array_raises_error(example_data):
+    for item in example_data.all_items():
+        if 'zeros' in [n for n, _ in item.all_arrays()]:
+            with pytest.raises(TypeError):
+                item.add_array('zeros', [])

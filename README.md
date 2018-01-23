@@ -84,11 +84,11 @@ Create a new dataset:
 >>> dataset = jbod.DataSet.create_dataset('new_dataset', metadata={...})
 ```
 
-Then, create items and data:
+Then, add items and data:
 ```python
->>> item = dataset.create_item(metadata={...})
->>> item.create_array('array1', [your data], metadata={...})
->>> item.create_array('array2', [your data], metadata={...})
+>>> item = dataset.add_item(metadata={...})
+>>> item.add_array('array1', [your data], metadata={...})
+>>> item.add_array('array2', [your data], metadata={...})
 ```
 
 Items do not have name, and item directories are random UUIDs. If you want to have human-readable names, supply an `itemformat` to the `DataSet` (a `str.format` string that will be called with the metadata).
@@ -97,8 +97,8 @@ Items do not have name, and item directories are random UUIDs. If you want to ha
 
 - [ ] Add search queries to `DataSet.all_items`
 - [X] Write a test suite
-- [ ] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.create_item`/`Item.create_array`
-- [ ] Implement different file types for `Item.create_array`/`Array.__new__`
+- [X] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.add_item`/`Item.add_array`
+- [ ] Implement different file types for `Item.add_array`/`Array.__new__`
   - [X] `npy`
   - [ ] `msgpack`
   - [ ] `csv`
@@ -106,7 +106,7 @@ Items do not have name, and item directories are random UUIDs. If you want to ha
   - [X] `flac`
   - [X] `ogg`
   - [X] `mat`
-- [ ] Implement importing existing files in `Item.create_array`
+- [ ] Implement importing existing files in `Item.add_array`
 - [ ] Implement read-only flag for dataset
 - [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
 - [ ] Implement deleting items/data (but don't change existing items/data to avoid race conditions)
