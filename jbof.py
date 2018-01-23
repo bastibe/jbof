@@ -110,19 +110,20 @@ class Entry:
 
         Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
-        with open(self.directory / (name + '.json'), 'w') as f:
-            datafilename = self.directory / (name + '.' + fileformat)
-            if fileformat == 'npy':
-               numpy.save(datafilename, data)
-            elif fileformat in ['wav', 'flac', 'ogg']:
-                if samplerate:
-                    soundfile.write(str(datafilename), data, int(samplerate))
-                else:
-                    raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
-            elif fileformat == 'mat':
-                scipy.io.savemat(str(datafilename), dict([(name, data)]))
+        datafilename = self.directory / (name + '.' + fileformat)
+        if fileformat == 'npy':
+            numpy.save(datafilename, data)
+        elif fileformat in ['wav', 'flac', 'ogg']:
+            if samplerate:
+                soundfile.write(str(datafilename), data, int(samplerate))
             else:
-                raise NotImplementedError(f'Fileformat {fileformat} not supported.')
+                raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
+        elif fileformat == 'mat':
+            scipy.io.savemat(str(datafilename), dict([(name, data)]))
+        else:
+            raise NotImplementedError(f'Fileformat {fileformat} not supported.')
+
+        with open(self.directory / (name + '.json'), 'w') as f:
             json.dump(dict(metadata, _filename=str(datafilename)), f, indent=2)
 
     def all_data(self):
