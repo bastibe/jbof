@@ -18,6 +18,8 @@ import numpy
 import uuid
 import json
 from pathlib import Path
+import soundfile
+import scipy.io
 
 class DataSet:
     """A structured collection of entries that contain data."""
@@ -108,15 +110,24 @@ class Entry:
         `fileformat` must be one of ['npy', 'msgpack', 'csv', 'wav', 'flac', 'ogg', 'mat']
             if fileformat is 'wav', 'flac', or 'ogg', `samplerate` must be given.
 
-        Currently, only `fileformat`='npy' is implemented.
+        Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
-        if not fileformat == 'npy':
-            raise NotImplementedError('Only npy is supported')
+        datafilename = self.directory / (name + '.' + fileformat)
+        if fileformat == 'npy':
+            numpy.save(datafilename, data)
+        elif fileformat in ['wav', 'flac', 'ogg']:
+            if samplerate:
+                soundfile.write(str(datafilename), data, int(samplerate))
+                metadata['samplerate'] = int(samplerate)
+            else:
+                raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
+        elif fileformat == 'mat':
+            scipy.io.savemat(str(datafilename), dict([(name, data)]))
+        else:
+            raise NotImplementedError(f'Fileformat {fileformat} not supported.')
 
-        datafilename = self.directory / (name + '.npy')
         with open(self.directory / (name + '.json'), 'w') as f:
             json.dump(dict(metadata, _filename=str(datafilename)), f, indent=2)
-        numpy.save(datafilename, data)
 
     def all_data(self):
         """A generator that returns all data as name-value pairs."""
@@ -130,7 +141,15 @@ class Datum(numpy.ndarray):
     def __new__(cls, metafile):
         with metafile.open() as f:
             metadata = json.load(f)
-        data = numpy.load(metadata['_filename'])
+        extension = Path(metadata['_filename']).suffix
+        if extension == '.npy':
+            data = numpy.load(metadata['_filename'])
+        elif extension in ['.wav', '.flac', '.ogg']:
+            data, _ = soundfile.read(metadata['_filename'])
+        elif extension == '.mat':
+            name = Path(metadata['_filename']).stem
+            data = scipy.io.loadmat(metadata['_filename'])
+            data = data[name]
         obj = numpy.asarray(data).view(cls)
         obj.metadata = metadata
         return obj
