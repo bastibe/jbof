@@ -99,13 +99,13 @@ Items do not have name, and item directories are random UUIDs. If you want to ha
 - [X] Write a test suite
 - [ ] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.create_item`/`Item.create_array`
 - [ ] Implement different file types for `Item.create_array`/`Array.__new__`
-  - [X] `npy`
-  - [ ] `msgpack`
-  - [ ] `csv`
-  - [X] `wav`
-  - [X] `flac`
-  - [X] `ogg`
-  - [X] `mat`
+  - [X] `npy`
+  - [ ] `msgpack`
+  - [ ] `csv`
+  - [X] `wav`
+  - [X] `flac`
+  - [X] `ogg`
+  - [X] `mat`
 - [ ] Implement importing existing files in `Item.create_array`
 - [ ] Implement read-only flag for dataset
 - [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
