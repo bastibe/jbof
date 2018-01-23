@@ -95,7 +95,7 @@ Items do not have name, and item directories are random UUIDs. If you want to ha
 
 ## TODO
 
-- [ ] Add search queries to `DataSet.all_items`
+- [X] Add search queries to `DataSet.all_items`
 - [X] Write a test suite
 - [X] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.add_item`/`Item.add_array`
 - [ ] Implement different file types for `Item.add_array`/`Array.__new__`

@@ -87,6 +87,26 @@ class DataSet:
                 continue
             yield Item(dir)
 
+    def search_items(self, **query):
+        """Search for items that match `query`.
+
+        Query can be arbitrary keyword arguments that are matched in
+        the metadata.
+        - if the query is a string, e.g. `foo='bar'`, the metadata
+          must contain `foo='bar'`.
+        - if the query is a list of strings, e.g. `foo=['bar', 'baz']`,
+          the metadata must contain either `foo='bar'` or `foo='baz'`.
+
+        """
+        for item in self.all_items():
+            for key, value in query.items():
+                if isinstance(value, str):
+                    value = [value]
+                if key not in item.metadata or item.metadata[key] not in value:
+                    break
+            else:
+                yield item
+
     def add_item(self, metadata):
         """Add a new, empty item with metadata."""
         dirname = self._itemname(metadata)
@@ -119,6 +139,12 @@ class Item:
 
     def __getattr__(self, name):
         return Array(self._directory / (name + '.json'))
+
+    def __eq__(self, other):
+        return self._directory == other._directory
+
+    def __hash__(self):
+        return hash(self._directory / '_metadata.json')
 
     def all_arrays(self):
         """A generator that returns all arrays as name-value pairs."""

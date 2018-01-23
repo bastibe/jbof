@@ -100,3 +100,14 @@ def test_delete_array():
     e.delete_array(a)
     assert len(list(e.all_arrays())) == 0
     jbof.delete_dataset(d)
+
+def test_search_items():
+    d = jbof.create_dataset('tmp2', {})
+    e1 = d.add_item({'foo': 'bar'})
+    e2 = d.add_item({'foo': 'baz', 'raz':'boo'})
+    e3 = d.add_item({'foo': 'quz'})
+    assert set(d.search_items(doesnot='exist')) == set()
+    assert set(d.search_items(foo='bar')) == {e1}
+    assert set(d.search_items(foo=['bar', 'baz'])) == {e1, e2}
+    assert set(d.search_items(foo='quz', raz='boo')) == set()
+    jbof.delete_dataset(d)
