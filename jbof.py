@@ -36,9 +36,9 @@ class DataSet:
         """
         directory = Path(directory)
         directory.mkdir()
-        with open(directory / '_metadata.json', 'wt') as f:
+        with (directory / '_metadata.json').open('wt') as f:
             json.dump(dict(metadata, _itemformat=itemformat), f, indent=2)
-        with open(directory / '__init__.py', 'wt') as f:
+        with (directory / '__init__.py').open('wt') as f:
             f.write('import jbof\n')
             f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
         return DataSet(directory)
@@ -55,7 +55,7 @@ class DataSet:
 
     @property
     def metadata(self):
-        with open(self._directory / '_metadata.json') as f:
+        with (self._directory / '_metadata.json').open() as f:
             return json.load(f)
 
     def __getitem__(self, key):
@@ -81,7 +81,7 @@ class DataSet:
         """Create a new, empty item with metadata."""
         dirname = self._itemname(metadata)
         (self._directory / dirname).mkdir()
-        with open(self._directory / dirname / '_metadata.json', 'w') as f:
+        with (self._directory / dirname / '_metadata.json').open('wt') as f:
             json.dump(metadata, f)
         return Item(self._directory / dirname)
 
@@ -92,7 +92,7 @@ class Item:
 
     @property
     def metadata(self):
-        with open(self._directory / '_metadata.json') as f:
+        with (self._directory / '_metadata.json').open() as f:
             return json.load(f)
 
     def __getitem__(self, key):
@@ -126,7 +126,7 @@ class Item:
         else:
             raise NotImplementedError(f'Fileformat {fileformat} not supported.')
 
-        with open(self._directory / (name + '.json'), 'w') as f:
+        with (self._directory / (name + '.json')).open('wt') as f:
             json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
 
     def all_arrays(self):
