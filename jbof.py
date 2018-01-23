@@ -42,7 +42,10 @@ class DataSet:
         return DataSet(directory)
 
     def __init__(self, directory):
-        self.directory = Path(directory)
+        directory = Path(directory)
+        if not directory.exists():
+            raise TypeError('DataSet directory {str(directory)} does not exist')
+        self.directory = directory
 
     @property
     def entryformat(self):
