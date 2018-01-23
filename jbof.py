@@ -22,22 +22,22 @@ import soundfile
 import scipy.io
 
 class DataSet:
-    """A structured collection of entries that contain data."""
+    """A structured collection of items that contain data."""
 
     @staticmethod
-    def create_dataset(directory, metadata=None, entryformat=None):
+    def create_dataset(directory, metadata=None, itemformat=None):
         """Create a new dataset.
 
         `metadata` must be JSON-serializable
-        `entryformat` is a `str.format` string, to be called with an
-            entry's metadata to create the entry's directory name.
+        `itemformat` is a `str.format` string, to be called with an
+            item's metadata to create the item's directory name.
             This is useful for creating human-readable directories.
 
         """
         directory = Path(directory)
         directory.mkdir()
         with open(directory / '_metadata.json', 'wt') as f:
-            json.dump(dict(metadata, _entryformat=entryformat), f, indent=2)
+            json.dump(dict(metadata, _itemformat=itemformat), f, indent=2)
         with open(directory / '__init__.py', 'wt') as f:
             f.write('import jbof\n')
             f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
@@ -47,64 +47,64 @@ class DataSet:
         directory = Path(directory)
         if not directory.exists():
             raise TypeError('DataSet directory {str(directory)} does not exist')
-        self.directory = directory
+        self._directory = directory
 
     @property
-    def entryformat(self):
-        return self.metadata['_entryformat']
+    def itemformat(self):
+        return self.metadata['_itemformat']
 
     @property
     def metadata(self):
-        with open(self.directory / '_metadata.json') as f:
+        with open(self._directory / '_metadata.json') as f:
             return json.load(f)
 
     def __getitem__(self, key):
         return self.metadata[key]
 
-    def _entryname(self, metadata):
-        entryformat = self.entryformat
-        if isinstance(entryformat, str) and '{' in entryformat:
-            return entryformat.format(**metadata)
-        elif entryformat is None:
+    def _itemname(self, metadata):
+        itemformat = self.itemformat
+        if isinstance(itemformat, str) and '{' in itemformat:
+            return itemformat.format(**metadata)
+        elif itemformat is None:
             return str(uuid.uuid1())
         else:
-            return TypeError(f'entryname must be None, or format string, not {entryformat}')
+            return TypeError(f'itemname must be None, or format string, not {itemformat}')
 
-    def all_entries(self):
-        """A generator that returns all entries."""
-        for dir in self.directory.glob('*'):
+    def all_items(self):
+        """A generator that returns all items."""
+        for dir in self._directory.glob('*'):
             if not dir.is_dir() or dir.stem == '__pycache__':
                 continue
-            yield Entry(dir)
+            yield Item(dir)
 
-    def create_entry(self, metadata):
-        """Create a new, empty entry with metadata."""
-        dirname = self._entryname(metadata)
-        (self.directory / dirname).mkdir()
-        with open(self.directory / dirname / '_metadata.json', 'w') as f:
+    def create_item(self, metadata):
+        """Create a new, empty item with metadata."""
+        dirname = self._itemname(metadata)
+        (self._directory / dirname).mkdir()
+        with open(self._directory / dirname / '_metadata.json', 'w') as f:
             json.dump(metadata, f)
-        return Entry(self.directory / dirname)
+        return Item(self._directory / dirname)
 
 
-class Entry:
+class Item:
     def __init__(self, directory):
-        self.directory = directory
+        self._directory = directory
 
     @property
     def metadata(self):
-        with open(self.directory / '_metadata.json') as f:
+        with open(self._directory / '_metadata.json') as f:
             return json.load(f)
 
     def __getitem__(self, key):
         return self.metadata[key]
 
     def __getattr__(self, name):
-        return Datum(self.directory / name + '.json')
+        return Array(self._directory / (name + '.json'))
 
-    def create_datum(self, name, data, metadata, fileformat='npy', samplerate=None):
-        """Create a new datum.
+    def create_array(self, name, data, metadata, fileformat='npy', samplerate=None):
+        """Create a new array.
 
-        `name` is the name of the datum.
+        `name` is the name of the array.
         `data` must be numpy-serializable.
         `metadata` must be JSON-serializable.
         `fileformat` must be one of ['npy', 'msgpack', 'csv', 'wav', 'flac', 'ogg', 'mat']
@@ -112,32 +112,32 @@ class Entry:
 
         Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
-        datafilename = self.directory / (name + '.' + fileformat)
+        arrayfilename = self._directory / (name + '.' + fileformat)
         if fileformat == 'npy':
-            numpy.save(datafilename, data)
+            numpy.save(arrayfilename, data)
         elif fileformat in ['wav', 'flac', 'ogg']:
             if samplerate:
-                soundfile.write(str(datafilename), data, int(samplerate))
+                soundfile.write(str(arrayfilename), data, int(samplerate))
                 metadata['samplerate'] = int(samplerate)
             else:
                 raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
         elif fileformat == 'mat':
-            scipy.io.savemat(str(datafilename), dict([(name, data)]))
+            scipy.io.savemat(str(arrayfilename), dict([(name, data)]))
         else:
             raise NotImplementedError(f'Fileformat {fileformat} not supported.')
 
-        with open(self.directory / (name + '.json'), 'w') as f:
-            json.dump(dict(metadata, _filename=str(datafilename)), f, indent=2)
+        with open(self._directory / (name + '.json'), 'w') as f:
+            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
 
-    def all_data(self):
-        """A generator that returns all data as name-value pairs."""
-        for meta in self.directory.glob('*.json'):
+    def all_arrays(self):
+        """A generator that returns all arrays as name-value pairs."""
+        for meta in self._directory.glob('*.json'):
             if meta.stem == '_metadata':
                 continue
-            yield meta.stem, Datum(meta)
+            yield meta.stem, Array(meta)
 
 
-class Datum(numpy.ndarray):
+class Array(numpy.ndarray):
     def __new__(cls, metafile):
         with metafile.open() as f:
             metadata = json.load(f)

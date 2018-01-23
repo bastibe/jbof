@@ -6,25 +6,26 @@ JBOF is free software under the terms of the GPL v3 license.
 
 ## Structure
 
-In JBOF, a dataset consists of many *items*, each of which may contain many *arrays*. The dataset, each item, and each array can have arbitrary metadata (as long as it is serializable as JSON). Arrays are Numpy arrays, stored as `.npy`-files, or as various other file formats (`.mat`, `.wav`, `.ogg`, `.flac`, `.msgpack`, `.csv`).
 
+In JBOF, a dataset consists of many *items*, each of which may contain many *arrays*. The dataset, each item, and each array can have arbitrary metadata (as long as it is serializable as JSON). Arrays are Numpy arrays, stored as `.npy`-files, or as various other file formats (`.mat`, `.wav`, `.ogg`, `.flac`, `.msgpack`, `.csv`).
 
 On disk, a dataset in JBOF is organized as follows:
 ```
 dataset
 ├── __init__.py
 ├── _metadata.json
-├── entry1
+├── item1
 │   ├── _metadata.json
-│   ├── datum1.json
-│   ├── datum1.npy
-│   ├── datum2.json
-│   └── datum2.npy
-└── entry2
+│   ├── array1.json
+│   ├── array1.npy
+│   ├── array2.json
+│   └── array2.npy
+└── item2
     ├── _metadata.json
-    ├── datum1.json
-    └── datum2.npy
+    ├── array1.json
+    └── array1.npy
 ```
+
 
 This structure is meant to be both simple and human-readable.
 
@@ -32,7 +33,7 @@ This structure is meant to be both simple and human-readable.
 - Each *item* directory contains its own metadata as *_metadata.json*, and pairs of files for each *array*.
 - Each *array* is a pair of files, one for metadata *array.json*, and one containing the actual data *array.npy*.
 
-By making sure that each operation on the dataset and entries is atomic, multiple processes can read/write the dataset concurrently without fear of data corruption or race conditions.
+By making sure that each operation on the dataset and items is atomic, multiple processes can read/write the dataset concurrently without fear of data corruption or race conditions.
 
 ## Reading Data
 
@@ -55,23 +56,23 @@ Access the dataset's metadata:
 'arbitrary JSON data'
 ```
 
-Access the dataset's entries:
+Access the dataset's items:
 ```python
->>> for entry in dataset.all_entries():
->>>     print(entry.metadata)
+>>> for item in dataset.all_items():
+>>>     print(item.metadata)
 {'again': 'arbitrary JSON data'}
 ```
 
-Access each entry's data:
+Access each item's arrays:
 ```python
 # either:
->>> for name, datum in entry.all_data():
->>>    print(name, datum.metadata, datum)
-datum1 {'again': 'more JSON data'} [numpy.ndarray]
+>>> for name, array in item.all_arrays():
+>>>    print(name, array.metadata, array)
+array1 {'again': 'more JSON data'} [numpy.ndarray]
 # or:
->>> entry.datum1.metadata
+>>> item.array1.metadata
 {'again': 'more JSON data'}
->>> entry.datum1
+>>> item.array1
 [numpy.ndarray]
 ```
 
@@ -83,21 +84,21 @@ Create a new dataset:
 >>> dataset = jbod.DataSet.create_dataset('new_dataset', metadata={...})
 ```
 
-Then, create entries and data:
+Then, create items and data:
 ```python
->>> entry = dataset.create_entry(metadata={...})
->>> entry.create_datum('datum1', [your data], metadata={...})
->>> entry.create_datum('datum2', [your data], metadata={...})
+>>> item = dataset.create_item(metadata={...})
+>>> item.create_array('array1', [your data], metadata={...})
+>>> item.create_array('array2', [your data], metadata={...})
 ```
 
-Entries do not have name, and entry directories are random UUIDs. If you want to have human-readable names, supply an `entryformat` to the `DataSet` (a `str.format` string that will be called with the metadata).
+Items do not have name, and item directories are random UUIDs. If you want to have human-readable names, supply an `itemformat` to the `DataSet` (a `str.format` string that will be called with the metadata).
 
 ## TODO
 
-- [ ] Add search queries to `DataSet.all_entries`
+- [ ] Add search queries to `DataSet.all_items`
 - [X] Write a test suite
-- [ ] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.create_entry`/`Entry.create_datum`
-- [ ] Implement different file types for `Entry.create_datum`/`Data.__new__` 
+- [ ] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.create_item`/`Item.create_array`
+- [ ] Implement different file types for `Item.create_array`/`Array.__new__`
   - [X] `npy`
   - [ ] `msgpack`
   - [ ] `csv`
@@ -108,6 +109,6 @@ Entries do not have name, and entry directories are random UUIDs. If you want to
 - [ ] Implement importing existing files in `Item.create_array`
 - [ ] Implement read-only flag for dataset
 - [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
-- [ ] Implement deleting entries/data (but don't change existing entries/data to avoid race conditions)
+- [ ] Implement deleting items/data (but don't change existing items/data to avoid race conditions)
 - [ ] Implement conversion to/from HDF
 - [ ] Implement conversion to/from MongoDB
