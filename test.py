@@ -48,12 +48,10 @@ def test_arrays(example_data):
             visited_arrays.append(name)
     assert sorted(visited_arrays) == ['ones', 'twos', 'zeros']
 
-def test_add_existing_array_raises_error():
+def test_create_existing_dataset_raises_error():
     d = jbof.DataSet.create_dataset('tmp2', {})
-    e = d.add_item({})
-    e.add_array('tmp', [], {})
     with pytest.raises(TypeError):
-        e.add_array('tmp', [], {})
+        jbof.DataSet.create_dataset('tmp2', {})
     shutil.rmtree('tmp2')
 
 def test_add_existing_item_raises_error():
@@ -62,3 +60,21 @@ def test_add_existing_item_raises_error():
     with pytest.raises(TypeError):
         d.add_item({'kind': 'item1'})
     shutil.rmtree('tmp2')
+
+def test_add_existing_array_raises_error():
+    d = jbof.DataSet.create_dataset('tmp2', {})
+    e = d.add_item({})
+    e.add_array('tmp', [], {})
+    with pytest.raises(TypeError):
+        e.add_array('tmp', [], {})
+    shutil.rmtree('tmp2')
+
+def test_add_array_from_file():
+    d = jbof.DataSet.create_dataset('tmp2', {})
+    e = d.add_item({})
+    numpy.save('tmp.npy', numpy.ones(5))
+    e.add_array_from_file('array', 'tmp.npy', {})
+    assert numpy.all(e.array == 1)
+    assert len(e.array) == 5
+    shutil.rmtree('tmp2')
+    Path('tmp.npy').unlink()

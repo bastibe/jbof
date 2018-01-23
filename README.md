@@ -106,7 +106,7 @@ Items do not have name, and item directories are random UUIDs. If you want to ha
   - [X] `flac`
   - [X] `ogg`
   - [X] `mat`
-- [ ] Implement importing existing files in `Item.add_array`
+- [X] Implement importing existing files in `Item.add_array`
 - [ ] Implement read-only flag for dataset
 - [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
 - [ ] Implement deleting items/data (but don't change existing items/data to avoid race conditions)

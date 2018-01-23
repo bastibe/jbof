@@ -18,6 +18,7 @@ import numpy
 import uuid
 import json
 from pathlib import Path
+import shutil
 import soundfile
 import scipy.io
 
@@ -105,6 +106,31 @@ class Item:
     def __getattr__(self, name):
         return Array(self._directory / (name + '.json'))
 
+    def add_array_from_file(self, name, filename, metadata):
+        """Add a new array from an existing file.
+
+        `name` is the name of the array.
+        `filename` is the file to be added (must be one of `npy`,
+            `msgpack`, `csv`, `wav`, `flac`, `ogg`, `mat`)
+        `metadata` must be JSON-serializable.
+
+        """
+        filename = Path(filename)
+        if not filename.exists():
+            raise TypeError(f'File {filename} does not exist')
+        if filename.suffix in ['wav', 'flac', 'ogg']:
+            with soundfile.SoundFile(str(filename)) as f:
+                metadata = dict(metadata, samplerate=f.samplerate)
+
+        arrayfilename = self._directory / (name + filename.suffix)
+        if arrayfilename.exists():
+            raise TypeError(f'Array with name {arrayfilename.name} already exists')
+
+        shutil.copy(filename, arrayfilename)
+
+        with (self._directory / (name + '.json')).open('wt') as f:
+            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
+
     def add_array(self, name, data, metadata, fileformat='npy', samplerate=None):
         """Add a new array.
 
@@ -124,7 +150,7 @@ class Item:
         elif fileformat in ['wav', 'flac', 'ogg']:
             if samplerate:
                 soundfile.write(str(arrayfilename), data, int(samplerate))
-                metadata['samplerate'] = int(samplerate)
+                metadata = dict(metadata, samplerate=samplerate)
             else:
                 raise TypeError(f'Samplerate must be given for fileformat {fileformat}.')
         elif fileformat == 'mat':
