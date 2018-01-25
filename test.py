@@ -1,8 +1,8 @@
 import pytest
-
-import jbof
 import numpy
 from pathlib import Path
+import soundfile
+import jbof
 
 @pytest.fixture
 def empty_tmp_dataset(request):
@@ -84,6 +84,22 @@ def test_add_array_from_file(empty_tmp_dataset):
     assert numpy.all(e.array == 1)
     assert len(e.array) == 5
     Path('tmp.npy').unlink()
+
+def test_add_array_from_audio_file(empty_tmp_dataset):
+    e = empty_tmp_dataset.add_item()
+    soundfile.write('tmp.wav', numpy.zeros(44100), 44100)
+    e.add_array_from_file('array', 'tmp.wav')
+    assert numpy.all(e.array == 0)
+    assert len(e.array) == 44100
+    assert e.array.metadata['samplerate'] == 44100
+    Path('tmp.wav').unlink()
+
+def test_audio_array(empty_tmp_dataset):
+    e = empty_tmp_dataset.add_item()
+    e.add_array('array', numpy.zeros(44100), fileformat='wav', samplerate=44100)
+    assert numpy.all(e.array == 0)
+    assert len(e.array) == 44100
+    assert e.array.metadata['samplerate'] == 44100
 
 def test_delete_dataset():
     d = jbof.create_dataset('tmp3')

@@ -197,7 +197,7 @@ class Item:
         filename = Path(filename)
         if not filename.exists():
             raise TypeError(f'File {filename} does not exist')
-        if filename.suffix in ['wav', 'flac', 'ogg']:
+        if filename.suffix in ['.wav', '.flac', '.ogg']:
             with soundfile.SoundFile(str(filename)) as f:
                 metadata = dict(metadata, samplerate=f.samplerate)
 
