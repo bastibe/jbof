@@ -25,6 +25,8 @@ import scipy.io
 
 def delete_dataset(dataset):
     """Deletes the whole dataset permanently from the hard drive."""
+    if dataset._readonly:
+        raise RuntimeError('DataSet is read-only')
     if not isinstance(dataset, DataSet):
         raise TypeError('dataset must be of type DataSet')
     shutil.rmtree(dataset._directory)
@@ -50,17 +52,18 @@ def create_dataset(directory, metadata=None, itemformat=None):
     with (directory / '__init__.py').open('wt') as f:
         f.write('import jbof\n')
         f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
-    return DataSet(directory)
+    return DataSet(directory, readonly=False)
 
 
 class DataSet:
     """A structured collection of items that contain data."""
 
-    def __init__(self, directory):
+    def __init__(self, directory, readonly=True):
         directory = Path(directory)
         if not directory.exists():
             raise TypeError('DataSet directory {str(directory)} does not exist')
         self._directory = directory
+        self._readonly = readonly
 
     @property
     def itemformat(self):
@@ -88,7 +91,7 @@ class DataSet:
         for dir in self._directory.iterdir():
             if not dir.is_dir() or dir.stem == '__pycache__':
                 continue
-            yield Item(dir)
+            yield Item(dir, self._readonly)
 
     def find_items(self, **query):
         """Search for items that match `query`.
@@ -120,6 +123,8 @@ class DataSet:
 
     def add_item(self, name=None, metadata=None):
         """Add a new, empty item."""
+        if self._readonly:
+            raise RuntimeError('DataSet is read-only')
         if name is None:
             dirname = self._itemname(metadata)
         else:
@@ -134,7 +139,7 @@ class DataSet:
         (self._directory / dirname).mkdir()
         with (self._directory / dirname / '_metadata.json').open('wt') as f:
             json.dump(metadata, f)
-        return Item(self._directory / dirname)
+        return Item(self._directory / dirname, self._readonly)
 
     def has_item(self, name):
         """Check if item of name exists."""
@@ -147,10 +152,12 @@ class DataSet:
         """Get an item by name."""
         if not self.has_item(name):
             raise TypeError('no item {name}')
-        return Item(self._directory / name)
+        return Item(self._directory / name, self._readonly)
 
     def delete_item(self, item):
         """Deletes item permanently from the hard drive."""
+        if self._readonly:
+            raise RuntimeError('DataSet is read-only')
         if isinstance(item, str):
             item = self.get_item(item)
         if not isinstance(item, Item):
@@ -173,8 +180,9 @@ class DataSet:
 
 
 class Item:
-    def __init__(self, directory):
+    def __init__(self, directory, readonly):
         self._directory = directory
+        self._readonly = readonly
 
     @property
     def metadata(self):
@@ -206,6 +214,8 @@ class Item:
         `metadata` must be JSON-serializable.
 
         """
+        if self._readonly:
+            raise RuntimeError('DataSet is read-only')
         if metadata is None:
             metadata = {}
         filename = Path(filename)
@@ -238,6 +248,8 @@ class Item:
 
         Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
+        if self._readonly:
+            raise RuntimeError('DataSet is read-only')
         if metadata is None:
             metadata = {}
         arrayfilename = self._directory / (name + '.' + fileformat)
@@ -264,6 +276,8 @@ class Item:
 
     def delete_array(self, array):
         """Deletes array permanently from the hard drive."""
+        if self._readonly:
+            raise RuntimeError('DataSet is read-only')
         if not isinstance(array, Array):
             raise TypeError('array must be of type Array')
         arrayfilename = Path(array._filename)

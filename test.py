@@ -133,3 +133,20 @@ def test_hash(empty_tmp_dataset):
     e = empty_tmp_dataset.add_item('tmp')
     e.add_array('tmp', numpy.zeros(5))
     assert '9e9d40c37dc787a96767d314434f4123' == empty_tmp_dataset.calculate_hash()
+
+def test_readonly(tmp_dataset):
+    d = jbof.DataSet(tmp_dataset._directory, readonly=True)
+    with pytest.raises(RuntimeError):
+        d.add_item()
+    with pytest.raises(RuntimeError):
+        d.delete_item(d.find_one_item())
+    for item in d.all_items():
+        with pytest.raises(RuntimeError):
+            item.add_array('tmp', [])
+        with pytest.raises(RuntimeError):
+            item.add_array_from_file('tmp', 'doesnotmatter')
+        with pytest.raises(RuntimeError):
+            a = list(item.all_arrays())[0]
+            item.delete_array(a)
+    with pytest.raises(RuntimeError):
+        jbof.delete_dataset(d)
