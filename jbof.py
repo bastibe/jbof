@@ -22,6 +22,19 @@ import shutil
 import hashlib
 import soundfile
 import scipy.io
+import h5py
+import numbers
+
+
+def _unwrap_numpy_types(data):
+    """Helper for encoding h5py attrs to JSON (may contain numpy.int64)."""
+    if issubclass(numpy.dtype(data).type, numbers.Integral) and numpy.isscalar(data):
+        return int(data)
+    elif issubclass(numpy.dtype(data).type, numbers.Floating) and numpy.isscalar(data):
+        return float(data)
+    else:
+        raise TypeError(f"can't encode {data} ({type(data)}) as JSON")
+
 
 def delete_dataset(dataset):
     """Deletes the whole dataset permanently from the hard drive."""
@@ -31,6 +44,7 @@ def delete_dataset(dataset):
         raise TypeError('dataset must be of type DataSet')
     shutil.rmtree(dataset._directory)
     dataset._directory = None
+
 
 def create_dataset(directory, metadata=None, itemformat=None):
     """Create a new dataset.
@@ -48,7 +62,7 @@ def create_dataset(directory, metadata=None, itemformat=None):
         raise TypeError('A directory with name {str(directory)} already exists')
     directory.mkdir()
     with (directory / '_metadata.json').open('wt') as f:
-        json.dump(dict(metadata, _itemformat=itemformat), f, indent=2)
+        json.dump(dict(metadata, _itemformat=itemformat), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
     with (directory / '__init__.py').open('wt') as f:
         f.write('import jbof\n')
         f.write('dataset = jbof.DataSet(jbof.Path(__file__).parent)\n')
@@ -138,7 +152,7 @@ class DataSet:
 
         (self._directory / dirname).mkdir()
         with (self._directory / dirname / '_metadata.json').open('wt') as f:
-            json.dump(metadata, f)
+            json.dump(metadata, f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
         return Item(self._directory / dirname, self._readonly)
 
     def has_item(self, name):
@@ -189,6 +203,10 @@ class Item:
         with (self._directory / '_metadata.json').open() as f:
             return json.load(f)
 
+    @property
+    def name(self):
+        return self._directory.name
+
     def __getattr__(self, name):
         return Array(self._directory / (name + '.json'))
 
@@ -233,7 +251,7 @@ class Item:
 
         metafilename = self._directory / (name + '.json')
         with metafilename.open('wt') as f:
-            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True)
+            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
 
         return Array(metafilename)
 
@@ -270,7 +288,7 @@ class Item:
 
         metafilename = (self._directory / (name + '.json'))
         with metafilename.open('wt') as f:
-            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True)
+            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
 
         return Array(metafilename)
 
@@ -316,3 +334,100 @@ class Array(numpy.ndarray):
         if obj is None: return
         self.metadata = getattr(obj, 'metadata', None)
         self._filename = getattr(obj, '_filename', None)
+
+
+def dataset_to_hdf(dataset, hdffilename):
+    file = h5py.File(hdffilename, 'w')
+    for k, v in dataset.metadata.items():
+        file.attrs[k] = v
+    for item in dataset.all_items():
+        grp = file.create_group(item.name)
+        for k, v in item.metadata.items():
+            grp.attrs[k] = v
+        for name, array in item.all_arrays():
+            dset = grp.create_dataset(name, data=array)
+            for k, v in array.metadata.items():
+                dset.attrs[k] = v
+            dset.attrs['_filename'] = array._filename
+    file.close()
+
+
+def hdf_to_dataset(hdfdataset, directory):
+    d = create_dataset(directory, hdfdataset.metadata)
+    for item in hdfdataset.all_items():
+        e = d.add_item(item.name, item.metadata)
+        for name, array in item.all_arrays():
+            format = Path(array._filename).suffix[1:]
+            a = e.add_array(name, array, array.metadata, fileformat=format,
+                            samplerate=array.metadata.get('samplerate', None))
+
+
+class HDFDataSet(DataSet):
+
+    def __init__(self, filename):
+        self._file = h5py.File(filename, 'r')
+        self._readonly = True
+
+    @property
+    def metadata(self):
+        return dict(self._file.attrs)
+
+    def all_items(self):
+        """A generator that returns all items."""
+        for grp in self._file.values():
+            yield HDFItem(grp)
+
+    def has_item(self, name):
+        """Check if item of name exists."""
+        return name in self._file
+
+    def get_item(self, name):
+        """Get an item by name."""
+        if not self.has_item(name):
+            raise TypeError('no item {name}')
+        return HDFItem(self._file[name])
+
+    def calculate_hash(self):
+        """Calculates an md5 hash of all data."""
+        raise NotImplementedError('Can not calculate hash of HDF DataSet')
+
+
+class HDFItem(Item):
+    def __init__(self, group):
+        self._group = group
+        self._readonly = True
+
+    @property
+    def metadata(self):
+        return dict(self._group.attrs)
+
+    @property
+    def name(self):
+        return Path(self._group.name).name
+
+    def __getattr__(self, name):
+        return HDFArray(self.group[name])
+
+    def __eq__(self, other):
+        return self._group == other._group
+
+    def __hash__(self):
+        return hash(self._group)
+
+    def all_arrays(self):
+        """A generator that returns all arrays as name-value pairs."""
+        for name, value in self._group.items():
+            yield name, HDFArray(value)
+
+    def has_array(self, name):
+        return name in self._group
+
+
+class HDFArray(Array):
+    """A subclass of numpy.ndarray with a `_filename` and `metadata`."""
+    def __new__(cls, data):
+        obj = numpy.asarray(data).view(cls)
+        obj.metadata = dict(data.attrs)
+        obj._filename = obj.metadata['_filename']
+        del obj.metadata['_filename']
+        return obj

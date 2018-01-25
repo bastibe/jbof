@@ -11,6 +11,8 @@ DataSets, Items, and Arrays are simple files on the file system. The file struct
 
 Every action (add/delete Item, add/delete Array) only touches files within the Item/Array in question, and does not interfere with other concurrent actions. In other words, DataSet is thread-safe.
 
+DataSets can be exported as HDF files, to make them easy to transfer to other computers. The HDF files can still be opened as DataSets, albeit only in read-only mode.
+
 
 ## Structure
 
@@ -134,6 +136,6 @@ You can delete arrays and Items with `Item.delete_array` and `DataSet.delete_ite
 - [X] Implement checksumming for the dataset  
   This works only for explicit item names and deterministic array filetypes.
 - [X] Implement deleting items/data (but don't change existing items/data to avoid race conditions)
-- [ ] Implement conversion to/from HDF
+- [X] Implement conversion to/from HDF
 - [ ] Implement conversion to/from MongoDB
 - [ ] Implement conversion to/from Zip

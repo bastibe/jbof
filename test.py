@@ -150,3 +150,17 @@ def test_readonly(tmp_dataset):
             item.delete_array(a)
     with pytest.raises(RuntimeError):
         jbof.delete_dataset(d)
+
+def test_hdf(tmp_dataset):
+    jbof.dataset_to_hdf(tmp_dataset, 'tmp.hdf')
+    d = jbof.HDFDataSet('tmp.hdf')
+    test_items(d)
+    test_arrays(d)
+
+    jbof.hdf_to_dataset(d, 'recreated')
+    d = jbof.DataSet('recreated', readonly=False)
+    test_items(d)
+    test_arrays(d)
+
+    Path('tmp.hdf').unlink()
+    jbof.delete_dataset(d)
