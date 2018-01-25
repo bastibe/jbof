@@ -73,9 +73,6 @@ class DataSet:
             del metadata['_itemformat']
             return metadata
 
-    def __getitem__(self, key):
-        return self.metadata[key]
-
     def _itemname(self, metadata):
         itemformat = self.itemformat
         if isinstance(itemformat, str) and '{' in itemformat:
@@ -138,9 +135,6 @@ class Item:
     def metadata(self):
         with (self._directory / '_metadata.json').open() as f:
             return json.load(f)
-
-    def __getitem__(self, key):
-        return self.metadata[key]
 
     def __getattr__(self, name):
         return Array(self._directory / (name + '.json'))
