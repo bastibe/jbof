@@ -84,12 +84,12 @@ class DataSet:
 
     def all_items(self):
         """A generator that returns all items."""
-        for dir in self._directory.glob('*'):
+        for dir in self._directory.iterdir():
             if not dir.is_dir() or dir.stem == '__pycache__':
                 continue
             yield Item(dir)
 
-    def search_items(self, **query):
+    def find_items(self, **query):
         """Search for items that match `query`.
 
         Query can be arbitrary keyword arguments that are matched in
@@ -109,20 +109,51 @@ class DataSet:
             else:
                 yield item
 
-    def add_item(self, metadata):
-        """Add a new, empty item with metadata."""
-        dirname = self._itemname(metadata)
-        if (self._directory / dirname).exists():
+    def find_one_item(self, **query):
+        """Search for items that match `query`.
+
+        See `find_items` for details.
+        """
+        for item in self.find_items(**query):
+            return item
+
+    def add_item(self, name=None, metadata=None):
+        """Add a new, empty item."""
+        if name is None:
+            dirname = self._itemname(metadata)
+        else:
+            dirname = str(name)
+
+        if metadata is None:
+            metadata = {}
+
+        if self.has_item(dirname):
             raise TypeError(f'Item with name {str(dirname)} already exists')
+
         (self._directory / dirname).mkdir()
         with (self._directory / dirname / '_metadata.json').open('wt') as f:
             json.dump(metadata, f)
         return Item(self._directory / dirname)
 
+    def has_item(self, name):
+        """Check if item of name exists."""
+        return (self._directory / name).exists()
+
+    def __contains__(self, name):
+        return self.has_item(name)
+
+    def get_item(self, name):
+        """Get an item by name."""
+        if not self.has_item(name):
+            raise TypeError('no item {name}')
+        return Item(self._directory / name)
+
     def delete_item(self, item):
         """Deletes item permanently from the hard drive."""
+        if isinstance(item, str):
+            item = self.get_item(item)
         if not isinstance(item, Item):
-            raise TypeError('item must be of type Item')
+            raise TypeError('item must be of type Item or str')
         shutil.rmtree(item._directory)
         item._directory = None
 
@@ -140,7 +171,7 @@ class Item:
         return Array(self._directory / (name + '.json'))
 
     def __eq__(self, other):
-        return self._directory == other._directory
+        return self._directory.samefile(other._directory)
 
     def __hash__(self):
         return hash(self._directory / '_metadata.json')
@@ -182,7 +213,7 @@ class Item:
 
         return Array(metafilename)
 
-    def add_array(self, name, data, metadata, fileformat='npy', samplerate=None):
+    def add_array(self, name, data, metadata=None, fileformat='npy', samplerate=None):
         """Add a new array.
 
         `name` is the name of the array.
@@ -225,6 +256,12 @@ class Item:
         metafilename = arrayfilename.with_suffix('.json')
         arrayfilename.unlink()
         metafilename.unlink()
+
+    def has_array(self, name):
+        return (self._directory / (name + '.json')).exists()
+
+    def __contains__(self, name):
+        return self.has_array(name)
 
 
 class Array(numpy.ndarray):
