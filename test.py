@@ -128,3 +128,8 @@ def test_find_items(empty_tmp_dataset):
     assert set(empty_tmp_dataset.find_items(foo='bar')) == {e1}
     assert set(empty_tmp_dataset.find_items(foo=['bar', 'baz'])) == {e1, e2}
     assert set(empty_tmp_dataset.find_items(foo='quz', raz='boo')) == set()
+
+def test_hash(empty_tmp_dataset):
+    e = empty_tmp_dataset.add_item('tmp')
+    e.add_array('tmp', numpy.zeros(5))
+    assert '9e9d40c37dc787a96767d314434f4123' == empty_tmp_dataset.calculate_hash()

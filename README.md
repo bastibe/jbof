@@ -108,7 +108,8 @@ Items do not have name, and item directories are random UUIDs. If you want to ha
   - [X] `mat`
 - [X] Implement importing existing files in `Item.add_array`
 - [ ] Implement read-only flag for dataset
-- [ ] Implement automatic checksumming when creating data, and post-hoc for the dataset
+- [X] Implement checksumming for the dataset  
+  This works only for explicit item names and deterministic array filetypes.
 - [X] Implement deleting items/data (but don't change existing items/data to avoid race conditions)
 - [ ] Implement conversion to/from HDF
 - [ ] Implement conversion to/from MongoDB

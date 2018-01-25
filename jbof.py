@@ -19,6 +19,7 @@ import uuid
 import json
 from pathlib import Path
 import shutil
+import hashlib
 import soundfile
 import scipy.io
 
@@ -157,6 +158,19 @@ class DataSet:
         shutil.rmtree(item._directory)
         item._directory = None
 
+    def calculate_hash(self):
+        """Calculates an md5 hash of all data."""
+        itemhashes = []
+        for item in self.all_items():
+            filehashes = []
+            for file in item._directory.iterdir():
+                with file.open('br') as f:
+                    filehashes.append(hashlib.md5(f.read()).digest())
+            filehashes = sorted(filehashes)
+            itemhashes.append(hashlib.md5(b''.join(filehashes)).digest())
+        itemhashes = sorted(itemhashes)
+        return hashlib.md5(b''.join(itemhashes)).hexdigest()
+
 
 class Item:
     def __init__(self, directory):
@@ -209,7 +223,7 @@ class Item:
 
         metafilename = self._directory / (name + '.json')
         with metafilename.open('wt') as f:
-            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
+            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True)
 
         return Array(metafilename)
 
@@ -244,7 +258,7 @@ class Item:
 
         metafilename = (self._directory / (name + '.json'))
         with metafilename.open('wt') as f:
-            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2)
+            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True)
 
         return Array(metafilename)
 
