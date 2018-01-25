@@ -38,6 +38,8 @@ def create_dataset(directory, metadata=None, itemformat=None):
         This is useful for creating human-readable directories.
 
     """
+    if metadata is None:
+        metadata = {}
     directory = Path(directory)
     if directory.exists():
         raise TypeError('A directory with name {str(directory)} already exists')
@@ -156,7 +158,7 @@ class Item:
                 continue
             yield meta.stem, Array(meta)
 
-    def add_array_from_file(self, name, filename, metadata):
+    def add_array_from_file(self, name, filename, metadata=None):
         """Add a new array from an existing file.
 
         `name` is the name of the array.
@@ -165,6 +167,8 @@ class Item:
         `metadata` must be JSON-serializable.
 
         """
+        if metadata is None:
+            metadata = {}
         filename = Path(filename)
         if not filename.exists():
             raise TypeError(f'File {filename} does not exist')
@@ -195,6 +199,8 @@ class Item:
 
         Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
+        if metadata is None:
+            metadata = {}
         arrayfilename = self._directory / (name + '.' + fileformat)
         if arrayfilename.exists():
             raise TypeError(f'Array with name {arrayfilename.name} already exists')
