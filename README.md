@@ -7,18 +7,22 @@ JBOF is free software under the terms of the GPL v3 license.
 
 ## Design Notes
 
-DataSets, Items, and Arrays are simple files on the file system. The file structure is meant to be easy to understand and inspect, and you should be able to read a DataSet from other programming languages with ease (as long as you save your arrays as non-`npy`).
+DataSets are commonly stored as loose collections of data files and metadata, or as monolithic archives as HDF or MAT files. The former is hard to work with, since every dataset has its own formatting conventions and file encodings. The latter is hard to explore without thorough documentation, and often significantly slower than the former.
 
-Every action (add/delete Item, add/delete Array) only touches files within the Item/Array in question, and does not interfere with other concurrent actions. In other words, DataSet is thread-safe.
+Specifically, I was struggling with HDF files full of audio data and audio-related features. Being a single file, it was hard for multiple processes to access such an archive. Due to its internal structure, metadata access was unnecessarily slow, which made searching the archive a chore. Furthermore, audio data is easily compressible, but no such compression methods could be used in HDF.
 
-Sometimes, it is beneficial to save a DataSet as a single file. To enable this, DataSets can be exported as HDF and ZIP files. These HDF/ZIP files can still be opened as DataSets, albeit only in read-only mode. JBOF provides convenience methods for converting DataSets to/from HDF. To convert to/from ZIP, simply zip/unzip the directory.
+JBOF solves this problem for me, by storing audio data and metadata as audio and JSON files, in a clean, HDF-like file structure. The file structure is easily explorable with a file browser, an audio player, and a text editor. It is also fast to access from any program that can read JSON and audio files. For non-audio data, other file formats such as `npy` and `mat` are supported as well.
+
+A JBOF *DataSet* is organized as a flat list of *Items*, which contain *Arrays*. Both the DataSet, the Items, and the Arrays can have metadata attached, which are stored as simple JSON files. Every action is thread-safe, in that every add/delete Item/Array only ever touches files within the Item/Array in question, and does not interfere with other concurrent actions.
+
+Sometimes, it is beneficial to save a DataSet as a single file. To enable this, DataSets can be exported as HDF and ZIP files. These HDF/ZIP files can still be opened as DataSets, albeit only in read-only mode. JBOF provides convenience methods for converting DataSets to/from HDF. To convert to/from ZIP, simply zip/unzip the directory. HDF datasets are significantly slower than plain files, and often bigger due to lack of audio-specific file encodings. Both ZIP and HDF files might be slower to read with multiple processes.
 
 
 ## Structure
 
-In JBOF, a dataset consists of many *items*, each of which may contain many *arrays*. The dataset, each item, and each array can have arbitrary metadata (as long as it is serializable as JSON). Arrays are Numpy arrays, stored as `.npy`-files, or as various other file formats (`.mat`, `.wav`, `.ogg`, `.flac`).
+In JBOF, a dataset consists of many *Items*, each of which may contain many *Arrays*. The dataset, each item, and each array can have arbitrary metadata, serialized as `.json` files. Arrays are Numpy arrays, stored as `.npy`-files, or as various other file formats (`.mat`, `.wav`, `.ogg`, `.flac`).
 
-On disk, a dataset in JBOF is organized as follows:
+On disk, a dataset in JBOF might look like this:
 ```
 dataset
 ├── __init__.py
@@ -36,7 +40,7 @@ dataset
 ```
 
 
-This structure is meant to be both simple and human-readable.
+This structure is meant to be both simple to parse, and human-readable.
 
 - The *dataset* directory contains its own metadata as *_metadata.json*, and sub-directories for each *item*.
 - Each *item* directory contains its own metadata as *_metadata.json*, and pairs of files for each *array*.
@@ -116,26 +120,3 @@ Then, add items and data:
 If you don't name items, they are assigned random UUIDs. Alternatively, you can supply an `itemformat` to the `DataSet`, which will generate item names from the item metadata.
 
 You can delete arrays and Items with `Item.delete_array` and `DataSet.delete_item`, and the whole dataset with `delete_dataset`.
-
-
-## TODO
-
-- [X] Add search queries to `DataSet.all_items`
-- [X] Write a test suite
-- [X] Implement already-exist checks in `DataSet.create_dataset`/`DataSet.add_item`/`Item.add_array`
-- [ ] Implement different file types for `Item.add_array`/`Array.__new__`
-  - [X] `npy`
-  - [ ] `msgpack`
-  - [ ] `csv`
-  - [X] `wav`
-  - [X] `flac`
-  - [X] `ogg`
-  - [X] `mat`
-- [X] Implement importing existing files in `Item.add_array`
-- [X] Implement read-only flag for dataset
-- [X] Implement checksumming for the dataset  
-  This works only for explicit item names and deterministic array filetypes.
-- [X] Implement deleting items/data (but don't change existing items/data to avoid race conditions)
-- [X] Implement conversion to/from HDF
-- [ ] Implement conversion to/from MongoDB
-- [X] Implement conversion to/from Zip
