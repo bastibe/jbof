@@ -22,17 +22,15 @@ import shutil
 import hashlib
 import soundfile
 import scipy.io
-import h5py
 import zipfile
-import numbers
 import io
 
 
 def _unwrap_numpy_types(data):
     """Helper for encoding h5py attrs to JSON (may contain numpy.int64)."""
-    if issubclass(numpy.dtype(data).type, numbers.Integral) and numpy.isscalar(data):
+    if issubclass(numpy.dtype(data).type, numpy.integer) and numpy.isscalar(data):
         return int(data)
-    elif issubclass(numpy.dtype(data).type, numbers.Floating) and numpy.isscalar(data):
+    elif issubclass(numpy.dtype(data).type, numpy.floating) and numpy.isscalar(data):
         return float(data)
     else:
         raise TypeError(f"can't encode {data} ({type(data)}) as JSON")
@@ -341,6 +339,8 @@ class Array(numpy.ndarray):
 
 
 def dataset_to_hdf(dataset, hdffilename):
+    import h5py
+
     file = h5py.File(hdffilename, 'w')
     for k, v in dataset.metadata.items():
         file.attrs[k] = v
@@ -369,6 +369,7 @@ def hdf_to_dataset(hdfdataset, directory):
 class HDFDataSet(DataSet):
 
     def __init__(self, filename):
+        import h5py
         self._file = h5py.File(filename, 'r')
         self._readonly = True
 
