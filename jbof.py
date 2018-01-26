@@ -77,7 +77,9 @@ class DataSet:
     def __init__(self, directory, readonly=True):
         directory = Path(directory)
         if not directory.exists():
-            raise TypeError('DataSet directory {str(directory)} does not exist')
+            raise TypeError(f'DataSet directory {str(directory)} does not exist')
+        if not directory.is_dir() and (directory / '_metadata.json').exists():
+            raise TypeError(f'{str(directory)} does not seem to be a DataSet')
         self._directory = directory
         self._readonly = readonly
 
