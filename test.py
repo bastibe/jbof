@@ -1,6 +1,7 @@
 import pytest
 import numpy
 from pathlib import Path
+import zipfile
 import soundfile
 import jbof
 
@@ -154,13 +155,28 @@ def test_readonly(tmp_dataset):
 def test_hdf(tmp_dataset):
     jbof.dataset_to_hdf(tmp_dataset, 'tmp.hdf')
     d = jbof.HDFDataSet('tmp.hdf')
+    assert d.metadata == {'kind': 'dataset'}
     test_items(d)
     test_arrays(d)
 
     jbof.hdf_to_dataset(d, 'recreated')
     d = jbof.DataSet('recreated', readonly=False)
+    assert d.metadata == {'kind': 'dataset'}
     test_items(d)
     test_arrays(d)
 
     Path('tmp.hdf').unlink()
     jbof.delete_dataset(d)
+
+
+def test_zip(tmp_dataset):
+    with zipfile.ZipFile('tmp.zip', 'w') as f:
+        for filename in tmp_dataset._directory.glob('**/*'):
+            f.write(filename)
+
+    d = jbof.ZIPDataSet('tmp.zip')
+    assert d.metadata == {'kind': 'dataset'}
+    test_items(d)
+    test_arrays(d)
+
+    Path('tmp.zip').unlink()

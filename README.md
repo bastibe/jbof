@@ -11,7 +11,7 @@ DataSets, Items, and Arrays are simple files on the file system. The file struct
 
 Every action (add/delete Item, add/delete Array) only touches files within the Item/Array in question, and does not interfere with other concurrent actions. In other words, DataSet is thread-safe.
 
-DataSets can be exported as HDF files, to make them easy to transfer to other computers. The HDF files can still be opened as DataSets, albeit only in read-only mode.
+Sometimes, it is beneficial to save a DataSet as a single file. To enable this, DataSets can be exported as HDF and ZIP files. These HDF/ZIP files can still be opened as DataSets, albeit only in read-only mode. JBOF provides convenience methods for converting DataSets to/from HDF. To convert to/from ZIP, simply zip/unzip the directory.
 
 
 ## Structure
@@ -138,4 +138,4 @@ You can delete arrays and Items with `Item.delete_array` and `DataSet.delete_ite
 - [X] Implement deleting items/data (but don't change existing items/data to avoid race conditions)
 - [X] Implement conversion to/from HDF
 - [ ] Implement conversion to/from MongoDB
-- [ ] Implement conversion to/from Zip
+- [X] Implement conversion to/from Zip

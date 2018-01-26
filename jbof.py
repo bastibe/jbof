@@ -23,7 +23,9 @@ import hashlib
 import soundfile
 import scipy.io
 import h5py
+import zipfile
 import numbers
+import io
 
 
 def _unwrap_numpy_types(data):
@@ -430,4 +432,111 @@ class HDFArray(Array):
         obj.metadata = dict(data.attrs)
         obj._filename = obj.metadata['_filename']
         del obj.metadata['_filename']
+        return obj
+
+
+class ZIPDataSet(DataSet):
+
+    def __init__(self, filename):
+        self._zipfile = zipfile.ZipFile(filename, 'r')
+        self._filetree = {}
+        for info in self._zipfile.infolist():
+            if info.is_dir() or '__pycache__' in info.filename:
+                continue
+            *parts, name = info.filename.split('/')
+            dir = self._filetree
+            for part in parts:
+                if part not in dir:
+                    dir[part] = {}
+                dir = dir[part]
+            dir[name] = info
+        while len(self._filetree) == 1:
+            self._filetree = self._filetree[list(self._filetree.keys())[0]]
+        self._readonly = True
+
+    @property
+    def metadata(self):
+        with self._zipfile.open(self._filetree['_metadata.json'].filename) as f:
+            metadata = json.load(f)
+            del metadata['_itemformat']
+            return metadata
+
+    def all_items(self):
+        """A generator that returns all items."""
+        for name, dir in self._filetree.items():
+            if not isinstance(dir, dict):
+                continue
+            yield ZIPItem(self._zipfile, name, dir)
+
+    def has_item(self, name):
+        """Check if item of name exists."""
+        return name in self._filetree
+
+
+    def get_item(self, name):
+        """Get an item by name."""
+        if not self.has_item(name):
+            raise TypeError('no item {name}')
+        return ZIPItem(self._zipfile, name, self._filetree[name])
+
+    def calculate_hash(self):
+        """Calculates an md5 hash of all data."""
+        raise NotImplementedError('Can not calculate hash of ZIP DataSet')
+
+
+class ZIPItem(Item):
+    def __init__(self, zipfile, directory, filetree):
+        self._zipfile = zipfile
+        self._directory = directory
+        self._filetree = filetree
+        self._readonly = True
+
+    @property
+    def metadata(self):
+        with self._zipfile.open(self._filetree['_metadata.json'].filename) as f:
+            return json.load(f)
+
+    @property
+    def name(self):
+        return self._directory
+
+    def __getattr__(self, name):
+        return ZIPArray(self._zipfile, self._filetree[name + '.json'])
+
+    def __eq__(self, other):
+        return self._directory == other._directory
+
+    def __hash__(self):
+        return hash(self._directory)
+
+    def all_arrays(self):
+        """A generator that returns all arrays as name-value pairs."""
+        for name, info in self._filetree.items():
+            if name.endswith('.json') and not name.startswith('_metadata'):
+                yield name[:-5], ZIPArray(self._zipfile, info)
+
+    def has_array(self, name):
+        return name + '.json' in self._filetree
+
+
+class ZIPArray(Array):
+    """A subclass of numpy.ndarray with a `_filename` and `metadata`."""
+    def __new__(cls, zipfile, fileinfo):
+        with zipfile.open(fileinfo.filename) as f:
+            metadata = json.load(f)
+        extension = Path(metadata['_filename']).suffix
+        with zipfile.open(metadata['_filename']) as f:
+            f = io.BytesIO(f.read())
+            if extension == '.npy':
+                data = numpy.load(f)
+            elif extension in ['.wav', '.flac', '.ogg']:
+                data, _ = soundfile.read(f)
+            elif extension == '.mat':
+                name = Path(metadata['_filename']).stem
+                data = scipy.io.loadmat(f)
+                data = data[name]
+        obj = numpy.asarray(data).view(cls)
+        obj._filename = metadata['_filename']
+        del metadata['_filename']
+        obj.metadata = metadata
         return obj
