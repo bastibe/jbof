@@ -10,6 +10,6 @@ setup(
     license='GPL v3',
     py_modules=['jbof'],
     install_requires=['numpy', 'soundfile', 'scipy'],
-    extra_require={'HDF': ['h5py']}
+    extra_require={'HDF': ['h5py']},
     python_requires='>=3.6'
 )
