@@ -107,7 +107,7 @@ array1 {'timestamp': '2018-01-25 15:20'} [numpy.ndarray data]
 Create a new, writeable dataset:
 ```python
 >>> import jbof
->>> dataset = jbof.DataSet.create_dataset('new_dataset', metadata={...})
+>>> dataset = jbof.create_dataset('new_dataset', metadata={...})
 ```
 
 Then, add items and data:
