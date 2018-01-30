@@ -56,8 +56,8 @@ To load a dataset, you can either import it, or load it from a URI:
 # either:
 >>> from dataset import dataset
 # or
->>> import jbod
->>> dataset = jbod.DataSet('dataset')
+>>> import jbof
+>>> dataset = jbof.DataSet('dataset')
 ```
 
 When opening a dataset like this, it is read-only (set `readonly=False` to make it writeable).
@@ -106,8 +106,8 @@ array1 {'timestamp': '2018-01-25 15:20'} [numpy.ndarray data]
 
 Create a new, writeable dataset:
 ```python
->>> import jbod
->>> dataset = jbod.DataSet.create_dataset('new_dataset', metadata={...})
+>>> import jbof
+>>> dataset = jbof.DataSet.create_dataset('new_dataset', metadata={...})
 ```
 
 Then, add items and data:
