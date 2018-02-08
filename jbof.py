@@ -210,6 +210,8 @@ class Item:
         return self._directory.name
 
     def __getattr__(self, name):
+        if name in ['__getstate__', '_directory', '_readonly']:
+            raise AttributeError()
         return Array(self._directory / (name + '.json'))
 
     def __eq__(self, other):
