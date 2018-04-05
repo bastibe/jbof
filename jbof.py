@@ -319,7 +319,7 @@ class Array(numpy.ndarray):
     def __new__(cls, metafile):
         with metafile.open() as f:
             metadata = json.load(f)
-        extension = Path(metadata['_filename']).suffix
+        extension = Path(metadata['_filename']).suffix.lower()
         filename = metafile.parent.parent.parent / metadata['_filename']
         if extension == '.npy':
             data = numpy.load(filename)
