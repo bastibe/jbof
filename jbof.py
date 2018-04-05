@@ -320,14 +320,14 @@ class Array(numpy.ndarray):
         with metafile.open() as f:
             metadata = json.load(f)
         extension = Path(metadata['_filename']).suffix
+        filename = metafile.parent.parent.parent / metadata['_filename']
         if extension == '.npy':
-            data = numpy.load(metadata['_filename'])
+            data = numpy.load(filename)
         elif extension in ['.wav', '.flac', '.ogg']:
-            data, _ = soundfile.read(metadata['_filename'])
+            data, _ = soundfile.read(str(filename))
         elif extension == '.mat':
-            name = Path(metadata['_filename']).stem
-            data = scipy.io.loadmat(metadata['_filename'])
-            data = data[name]
+            data = scipy.io.loadmat(filename)
+            data = data[filename.stem]
         obj = numpy.asarray(data).view(cls)
         obj._filename = metadata['_filename']
         del metadata['_filename']
