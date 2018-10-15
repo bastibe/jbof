@@ -80,6 +80,7 @@ class DataSet:
             raise TypeError(f'{str(directory)} does not seem to be a DataSet')
         self._directory = directory
         self._readonly = readonly
+        self._cache = None
 
     @property
     def itemformat(self):
@@ -104,10 +105,19 @@ class DataSet:
 
     def all_items(self):
         """A generator that returns all items."""
-        for dir in self._directory.iterdir():
-            if not dir.is_dir() or dir.stem == '__pycache__':
-                continue
-            yield Item(dir, self._readonly)
+
+        if self._cache:
+            yield from self._cache
+        else:
+            cache = []
+            for dir in self._directory.iterdir():
+                if not dir.is_dir() or dir.stem == '__pycache__':
+                    continue
+                item = Item(dir, self._readonly)
+                cache.append(item)
+                yield item
+            else: # if all items were traversed:
+                self._cache = cache
 
     def find_items(self, **query):
         """Search for items that match `query`.
@@ -152,6 +162,8 @@ class DataSet:
         if self.has_item(dirname):
             raise TypeError(f'Item with name {str(dirname)} already exists')
 
+        self._cache = None # invalidate cache
+
         (self._directory / dirname).mkdir()
         with (self._directory / dirname / '_metadata.json').open('wt') as f:
             json.dump(metadata, f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
@@ -178,6 +190,7 @@ class DataSet:
             item = self.get_item(item)
         if not isinstance(item, Item):
             raise TypeError('item must be of type Item or str')
+        self._cache = None # invalidate cache
         shutil.rmtree(item._directory)
         item._directory = None
 
@@ -199,11 +212,14 @@ class Item:
     def __init__(self, directory, readonly):
         self._directory = directory
         self._readonly = readonly
+        self._metadata_cache = None
 
     @property
     def metadata(self):
-        with (self._directory / '_metadata.json').open() as f:
-            return json.load(f)
+        if not self._metadata_cache:
+            with (self._directory / '_metadata.json').open() as f:
+                self._metadata_cache = json.load(f)
+        return self._metadata_cache
 
     @property
     def name(self):
