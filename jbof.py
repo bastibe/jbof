@@ -216,7 +216,8 @@ class Item:
 
     @property
     def metadata(self):
-        if not self._metadata_cache:
+        # use hasattr for compatibility with older, pickled Items:
+        if not hasattr(self, '_metadata_cache') or not self._metadata_cache:
             with (self._directory / '_metadata.json').open() as f:
                 self._metadata_cache = json.load(f)
         return self._metadata_cache
@@ -226,7 +227,7 @@ class Item:
         return self._directory.name
 
     def __getattr__(self, name):
-        if name in ['__getstate__', '_directory', '_readonly']:
+        if name in ['__getstate__', '_directory', '_readonly', '_metadata_cache']:
             raise AttributeError()
         return Array(self._directory / (name + '.json'))
 
