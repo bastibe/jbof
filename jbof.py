@@ -340,7 +340,8 @@ class Array(numpy.ndarray):
         if extension == '.npy':
             data = numpy.load(filename)
         elif extension in ['.wav', '.flac', '.ogg']:
-            data, _ = soundfile.read(str(filename))
+            data, samplerate = soundfile.read(str(filename))
+            metadata['samplerate'] = samplerate
         elif extension == '.mat':
             data = scipy.io.loadmat(filename)
             data = data[filename.stem]
