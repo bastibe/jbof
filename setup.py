@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='jbof',
-    version='0.0.4',
+    version='0.0.5',
     description='A Daset from Just a Bunch of Files',
     author='Bastian Bechtold',
     author_email='basti@bastibe.de',

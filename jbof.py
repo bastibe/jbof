@@ -162,12 +162,13 @@ class DataSet:
         if self.has_item(dirname):
             raise TypeError(f'Item with name {str(dirname)} already exists')
 
-        self._cache = None # invalidate cache
-
         (self._directory / dirname).mkdir()
         with (self._directory / dirname / '_metadata.json').open('wt') as f:
             json.dump(metadata, f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
-        return Item(self._directory / dirname, self._readonly)
+
+        item = Item(self._directory / dirname, self._readonly)
+        self._cache.append(item)
+        return item
 
     def has_item(self, name):
         """Check if item of name exists."""
