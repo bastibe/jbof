@@ -94,6 +94,10 @@ class DataSet:
             del metadata['_itemformat']
             return metadata
 
+    @property
+    def name(self):
+        return self._directory.name
+
     def _itemname(self, metadata):
         itemformat = self.itemformat
         if isinstance(itemformat, str) and '{' in itemformat:
