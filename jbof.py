@@ -49,10 +49,10 @@ def delete_dataset(dataset):
 def create_dataset(directory, metadata=None, itemformat=None):
     """Create a new dataset.
 
-    `metadata` must be JSON-serializable
-    `itemformat` is a `str.format` string, to be called with an
-        item's metadata to create the item's directory name.
-        This is useful for creating human-readable directories.
+    - `metadata` must be JSON-serializable
+    - `itemformat` is a ``str.format`` string, to be called with an
+      item's metadata to create the item's directory name.
+      This is useful for creating human-readable directories.
 
     """
     if metadata is None:
@@ -80,15 +80,17 @@ class DataSet:
             raise TypeError(f'{str(directory)} does not seem to be a DataSet')
         self._directory = directory
         self._readonly = readonly
-        self._cache = None
+        self._cache = []
 
     @property
     def itemformat(self):
+        """The ``str.format`` format string for generating item names from metadata."""
         with (self._directory / '_metadata.json').open() as f:
             return json.load(f)['_itemformat']
 
     @property
     def metadata(self):
+        """The Dataset's metadata dict."""
         with (self._directory / '_metadata.json').open() as f:
             metadata = json.load(f)
             del metadata['_itemformat']
@@ -96,6 +98,7 @@ class DataSet:
 
     @property
     def name(self):
+        """The dataset's directory name."""
         return self._directory.name
 
     def _itemname(self, metadata):
@@ -128,10 +131,17 @@ class DataSet:
 
         Query can be arbitrary keyword arguments that are matched in
         the metadata.
+
         - if the query is a string, e.g. `foo='bar'`, the metadata
           must contain `foo='bar'`.
         - if the query is a list of strings, e.g. `foo=['bar', 'baz']`,
           the metadata must contain either `foo='bar'` or `foo='baz'`.
+
+        Returns a generator that walks all matching items.
+
+        If there are many items, the first run might be slow, but
+        subsequent `find_items` will search through cached metadata,
+        and will run faster.
 
         """
         for item in self.all_items():
@@ -171,11 +181,15 @@ class DataSet:
             json.dump(metadata, f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
 
         item = Item(self._directory / dirname, self._readonly)
-        self._cache.append(item)
+        if self._cache:
+            self._cache.append(item)
         return item
 
     def has_item(self, name):
-        """Check if item of name exists."""
+        """Check if item of name exists.
+
+        Or use ``name in dataset`` instead.
+        """
         return (self._directory / name).exists()
 
     def __contains__(self, name):
@@ -188,14 +202,17 @@ class DataSet:
         return Item(self._directory / name, self._readonly)
 
     def delete_item(self, item):
-        """Deletes item permanently from the hard drive."""
+        """Deletes item permanently from the hard drive.
+
+        This invalidates the ``find_items`` cache.
+        """
         if self._readonly:
             raise RuntimeError('DataSet is read-only')
         if isinstance(item, str):
             item = self.get_item(item)
         if not isinstance(item, Item):
             raise TypeError('item must be of type Item or str')
-        self._cache = None # invalidate cache
+        self._cache = [] # invalidate cache
         shutil.rmtree(item._directory)
         item._directory = None
 
@@ -214,6 +231,8 @@ class DataSet:
 
 
 class Item:
+    """A collection of arrays in a dataset."""
+
     def __init__(self, directory, readonly):
         self._directory = directory
         self._readonly = readonly
@@ -221,6 +240,7 @@ class Item:
 
     @property
     def metadata(self):
+        """The item's metadata dict."""
         # use hasattr for compatibility with older, pickled Items:
         if not hasattr(self, '_metadata_cache') or not self._metadata_cache:
             with (self._directory / '_metadata.json').open() as f:
@@ -229,6 +249,7 @@ class Item:
 
     @property
     def name(self):
+        """The item's directory name."""
         return self._directory.name
 
     def __getattr__(self, name):
@@ -252,10 +273,10 @@ class Item:
     def add_array_from_file(self, name, filename, metadata=None):
         """Add a new array from an existing file.
 
-        `name` is the name of the array.
-        `filename` is the file to be added (must be one of `npy`,
-            `msgpack`, `csv`, `wav`, `flac`, `ogg`, `mat`)
-        `metadata` must be JSON-serializable.
+        - `name` is the name of the array.
+        - `filename` is the file to be added (must be one of ``.npy``,
+          ``.wav``, ``.flac``, ``.ogg``, ``.mat``)
+        - `metadata` must be JSON-serializable.
 
         """
         if self._readonly:
@@ -284,13 +305,12 @@ class Item:
     def add_array(self, name, data, metadata=None, fileformat='npy', samplerate=None):
         """Add a new array.
 
-        `name` is the name of the array.
-        `data` must be numpy-serializable.
-        `metadata` must be JSON-serializable.
-        `fileformat` must be one of ['npy', 'msgpack', 'csv', 'wav', 'flac', 'ogg', 'mat']
-            if fileformat is 'wav', 'flac', or 'ogg', `samplerate` must be given.
+        - `name` is the name of the array.
+        - `data` must be numpy-serializable.
+        - `metadata` must be JSON-serializable.
+        - `fileformat` must be one of [``'npy'``, ``'wav'``, ``'flac'``, ``'ogg'``, ``'mat'``]
+          if fileformat is ``'wav'``, ``'flac'``, or ``'ogg'``, ``samplerate`` must be given.
 
-        Currently, only `fileformat`= ['msgpack', 'csv'] are not implemented.
         """
         if self._readonly:
             raise RuntimeError('DataSet is read-only')
@@ -330,6 +350,10 @@ class Item:
         metafilename.unlink()
 
     def has_array(self, name):
+        """Check if array of name exists.
+
+        Or use ``name in item`` instead.
+        """
         return (self._directory / (name + '.json')).exists()
 
     def __contains__(self, name):
@@ -364,6 +388,7 @@ class Array(numpy.ndarray):
 
 
 def dataset_to_hdf(dataset, hdffilename):
+    """Convert the dataset to HDF5."""
     import h5py
 
     file = h5py.File(hdffilename, 'w')
@@ -382,6 +407,7 @@ def dataset_to_hdf(dataset, hdffilename):
 
 
 def hdf_to_dataset(hdfdataset, directory):
+    """Convert a HDF5 dataset to a JBOF directory."""
     d = create_dataset(directory, hdfdataset.metadata)
     for item in hdfdataset.all_items():
         e = d.add_item(item.name, item.metadata)
