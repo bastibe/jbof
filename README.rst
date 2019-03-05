@@ -33,8 +33,8 @@ and a text editor. It is also fast to access from any program that can
 read JSON and audio files. For non-audio data, other file formats such
 as ``npy`` and ``mat`` are supported as well.
 
-A JBOF :class:`DataSet` is organized as a flat list of :class:`Items`,
-which contain :class:`Arrays`. Both the DataSet, the Items, and the
+A JBOF `DataSet` is organized as a flat list of `Items`,
+which contain `Arrays`. Both the DataSet, the Items, and the
 Arrays can have metadata attached, which are stored as simple JSON
 files. Every action is thread-safe, in that every add/delete
 Item/Array only ever touches files within the Item/Array in question,
