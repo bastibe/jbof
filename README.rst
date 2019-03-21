@@ -6,6 +6,9 @@ with various levels of metadata. Managing such a dataset is finicky
 and error-prone. JBOF standardizes the creation and access to such a
 dataset.
 
+JBOF is available for Python and Matlab (read-only). It includes a
+partial implementation of Numpy's NPY format for Matlab.
+
 JBOF is free software under the terms of the GPL v3 license.
 
 
