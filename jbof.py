@@ -237,6 +237,7 @@ class Item:
         self._directory = directory
         self._readonly = readonly
         self._metadata_cache = None
+        self._array_cache = {}
 
     @property
     def metadata(self):
@@ -253,9 +254,13 @@ class Item:
         return self._directory.name
 
     def __getattr__(self, name):
-        if name in ['__getstate__', '_directory', '_readonly', '_metadata_cache']:
+        if name in ['__getstate__', '_directory', '_readonly', '_metadata_cache', '_array_cache']:
             raise AttributeError()
-        return Array(self._directory / (name + '.json'))
+        if not self.has_array(name):
+            raise TypeError(f'no array {name}')
+        if name not in self._array_cache:
+            self._array_cache[name] = Array(self._directory / (name + '.json'))
+        return self._array_cache[name]
 
     def __eq__(self, other):
         return self._directory.samefile(other._directory)
@@ -268,7 +273,7 @@ class Item:
         for meta in self._directory.glob('*.json'):
             if meta.stem == '_metadata':
                 continue
-            yield meta.stem, Array(meta)
+            yield meta.stem, getattribute(self, meta.stem)
 
     def add_array_from_file(self, name, filename, metadata=None):
         """Add a new array from an existing file.
@@ -348,13 +353,15 @@ class Item:
         metafilename = arrayfilename.with_suffix('.json')
         arrayfilename.unlink()
         metafilename.unlink()
+        if metafilename in self._array_cache:
+            del self._array_cache[arrayfilename.stem]
 
     def has_array(self, name):
         """Check if array of name exists.
 
         Or use ``name in item`` instead.
         """
-        return (self._directory / (name + '.json')).exists()
+        return (self._directory / (name + '.json')).is_file()
 
     def __contains__(self, name):
         return self.has_array(name)
