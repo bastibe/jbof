@@ -59,7 +59,7 @@ def create_dataset(directory, metadata=None, itemformat=None):
         metadata = {}
     directory = Path(directory)
     if directory.exists():
-        raise TypeError('A directory with name {str(directory)} already exists')
+        raise TypeError(f'A directory with name {str(directory)} already exists')
     directory.mkdir()
     with (directory / '_metadata.json').open('wt') as f:
         json.dump(dict(metadata, _itemformat=itemformat), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
@@ -198,7 +198,7 @@ class DataSet:
     def get_item(self, name):
         """Get an item by name."""
         if not self.has_item(name):
-            raise TypeError('no item {name}')
+            raise TypeError(f'no item {name}')
         return Item(self._directory / name, self._readonly)
 
     def delete_item(self, item):
@@ -440,7 +440,7 @@ class HDFDataSet(DataSet):
     def get_item(self, name):
         """Get an item by name."""
         if not self.has_item(name):
-            raise TypeError('no item {name}')
+            raise TypeError(f'no item {name}')
         return HDFItem(self._file[name])
 
     def calculate_hash(self):
@@ -530,7 +530,7 @@ class ZIPDataSet(DataSet):
     def get_item(self, name):
         """Get an item by name."""
         if not self.has_item(name):
-            raise TypeError('no item {name}')
+            raise TypeError(f'no item {name}')
         return ZIPItem(self._zipfile, name, self._filetree[name])
 
     def calculate_hash(self):
