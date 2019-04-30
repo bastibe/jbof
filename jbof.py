@@ -201,6 +201,9 @@ class DataSet:
             raise TypeError(f'no item {name}')
         return Item(self._directory / name, self._readonly)
 
+    def __getitem__(self, name):
+        return self.get_item(name)
+
     def delete_item(self, item):
         """Deletes item permanently from the hard drive.
 
