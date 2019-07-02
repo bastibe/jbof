@@ -265,6 +265,12 @@ class Item:
             self._array_cache[name] = Array(self._directory / (name + '.json'))
         return self._array_cache[name]
 
+    def __getstate__(self):
+        state = self.__dict__
+        state['_metadata_cache'] = None
+        state['_array_cache'] = {}
+        return state
+
     def __eq__(self, other):
         return self._directory.samefile(other._directory)
 
