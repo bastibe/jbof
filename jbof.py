@@ -312,7 +312,7 @@ class Item:
 
         metafilename = self._directory / (name + '.json')
         with metafilename.open('wt') as f:
-            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
+            json.dump(dict(metadata, _filename=arrayfilename.name), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
 
         return Array(metafilename)
 
@@ -348,7 +348,7 @@ class Item:
 
         metafilename = (self._directory / (name + '.json'))
         with metafilename.open('wt') as f:
-            json.dump(dict(metadata, _filename=str(arrayfilename)), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
+            json.dump(dict(metadata, _filename=arrayfilename.name), f, indent=2, sort_keys=True, default=_unwrap_numpy_types)
 
         return Array(metafilename)
 
@@ -382,7 +382,9 @@ class Array(numpy.ndarray):
         with metafile.open() as f:
             metadata = json.load(f)
         extension = Path(metadata['_filename']).suffix.lower()
-        filename = metafile.parent.parent.parent / metadata['_filename']
+        # Use Path(...).name for compatibility with earlier version
+        # that stored more than just the name:
+        filename = metafile.parent / Path(metadata['_filename']).name
         if extension == '.npy':
             data = numpy.load(filename)
         elif extension in ['.wav', '.flac', '.ogg']:
