@@ -1,8 +1,0 @@
-build:
-  image: latest
-
-requirements_file: doc/requirements.txt
-
-formats:
-  - epub
-  - pdf
